@@ -1,5 +1,5 @@
 create table persondb (
-	id SERIAL primary key,
+	id serial primary key,
 	salary INTEGER,
 	married BOOLEAN,
 	profession VARCHAR(30)
