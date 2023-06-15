@@ -1,0 +1,18 @@
+curl -X DELETE http://localhost:8080/persondb/b5665676-7640-401f-9fb4-3c534f5fb6db
+
+# curl -X PUT \
+#   -H 'Content-Type: application/json' \
+#   -d '{"Salary":1000000, "Married":true, "Profession":"football player"}' \
+#   http://localhost:8080/persondb/b5665676-7640-401f-9fb4-3c534f5fb6db
+
+# curl http://localhost:8080/persondb/25b18d06-b8f9-4b01-bffb-519b5058f01a
+
+
+
+
+# curl http://localhost:8080/persondb \
+#   -H 'Content-Type: application/json' \
+#   -X POST \
+#   -d '{"salary":100, "married":true, "profession":"football player"}' 
+
+
