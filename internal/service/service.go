@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/distuurbia/firstTask/internal/model"
-	"github.com/distuurbia/firstTask/internal/repository"
+	"github.com/distuurbia/firstTask/internal/repository/postgreRep"
 	"github.com/google/uuid"
 )
 
@@ -13,10 +13,13 @@ type Person struct {
 }
 
 func NewService(rps *repository.Person) *Person {
+
 	return &Person{rps: rps}
+
 }
 
 func (s *Person) Create(ctx context.Context, p *model.Person) error {
+
 	return s.rps.Create(ctx, p)
 
 }
@@ -31,5 +34,7 @@ func (s *Person) Update(ctx context.Context, p *model.Person) error {
 
 }
 func (s *Person) Delete(ctx context.Context, id uuid.UUID) error {
+
 	return s.rps.Delete(ctx, id)
+
 }

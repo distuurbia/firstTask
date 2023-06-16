@@ -7,19 +7,20 @@ import (
 	"github.com/distuurbia/firstTask/internal/model"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-
 )
 
-type Person struct {
+type PersonPgx struct {
 	db *pgxpool.Pool
 }
 
-
-func NewRepository(db *pgxpool.Pool) *Person {
-	return &Person{db: db}
+func NewRepository(db *pgxpool.Pool) *PersonPgx {
+	return &PersonPgx{db: db}
 }
 
-func (r *Person) Create(ctx context.Context, p *model.Person) (error) {
+func (r *PersonPgx) Create(ctx context.Context, p *model.Person) error {
+	if p == nil {
+		return ErrNil
+	}
 	_, err := r.db.Exec(ctx, "INSERT INTO persondb(salary, married, profession, id) VALUES($1, $2, $3, $4)", p.Salary, p.Married, p.Profession, p.Id)
 	if err != nil {
 		return fmt.Errorf("create %w", err)
@@ -27,7 +28,7 @@ func (r *Person) Create(ctx context.Context, p *model.Person) (error) {
 	return nil
 }
 
-func (r *Person) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
+func (r *PersonPgx) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 	var p model.Person
 	err := r.db.QueryRow(ctx, "SELECT id, salary, married, profession FROM persondb WHERE id = $1", id).Scan(&p.Id, &p.Salary, &p.Married, &p.Profession)
 	if err != nil {
@@ -36,7 +37,7 @@ func (r *Person) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, erro
 	return &p, nil
 }
 
-func (r *Person) Update(ctx context.Context, p *model.Person) error {
+func (r *PersonPgx) Update(ctx context.Context, p *model.Person) error {
 	_, err := r.db.Exec(ctx, "UPDATE persondb SET salary = $1, married = $2, profession = $3 WHERE id = $4", p.Salary, p.Married, p.Profession, p.Id)
 	if err != nil {
 		return fmt.Errorf("Update %w", err)
@@ -44,7 +45,7 @@ func (r *Person) Update(ctx context.Context, p *model.Person) error {
 	return nil
 }
 
-func (r *Person) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *PersonPgx) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.Exec(ctx, "DELETE FROM persondb WHERE id = $1", id)
 	if err != nil {
 		return fmt.Errorf("Delete %w", err)

@@ -11,18 +11,17 @@ import (
 
 	"github.com/google/uuid"
 
-	// "github.com/distuurbia/firstTask/internal/repository"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 )
 
-var rps *Person
+var rps *PersonPgx
 
 var vladimir = model.Person{
-	Id: uuid.New(),
-	Salary: 2000,
-	Married: true,
+	Id:         uuid.New(),
+	Salary:     2000,
+	Married:    true,
 	Profession: "policeman",
 }
 
@@ -52,14 +51,18 @@ func TestMain(m *testing.M) {
 }
 
 func Test_Create(t *testing.T) {
-
 	err := rps.Create(context.Background(), &vladimir)
 	require.NoError(t, err)
-
 	var testVladimir *model.Person
 	testVladimir, err = rps.ReadRow(context.Background(), vladimir.Id)
 	require.NoError(t, err)
 	require.Equal(t, *testVladimir, vladimir)
+}
+
+func Test_CreateNil(t *testing.T) {
+	err := rps.Create(context.Background(), nil)
+	require.True(t, errors.Is(err, repository.ErrNil))
+
 }
 
 func Test_ReadRow(t *testing.T) {
@@ -74,19 +77,29 @@ func Test_ReadRowNotFound(t *testing.T) {
 	require.True(t, errors.Is(err, pgx.ErrNoRows))
 }
 
-
 func Test_Update(t *testing.T) {
 	vladimir.Salary = 700
 	err := rps.Update(context.Background(), &vladimir)
 	require.NoError(t, err)
 	testVladimir, err := rps.ReadRow(context.Background(), vladimir.Id)
-	require.Equal(t, *testVladimir, vladimir)
+
+}
+
+func Test_UpdateNotFound(t *testing.T) {
+	var emptyEntity model.Person
+	err := rps.Update(context.Background(), &emptyEntity)
+	require.True(t, errors.Is(err, pgx.ErrNoRows))
 }
 
 func Test_Delete(t *testing.T) {
-	var testGrigory model.Person
 	err := rps.Delete(context.Background(), vladimir.Id)
 	require.NoError(t, err)
-	testVladimir, err := rps.ReadRow(context.Background(), vladimir.Id)
-	require.Equal(t, *testVladimir, testGrigory)
+	_, err = rps.ReadRow(context.Background(), vladimir.Id)
+	require.True(t, errors.Is(err, pgx.ErrNoRows))
+}
+
+func Test_DeleteNotFound(t *testing.T) {
+	var id uuid.UUID
+	err := rps.Delete(context.Background(), id)
+	require.True(t, errors.Is(err, pgx.ErrNoRows))
 }

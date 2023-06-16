@@ -3,18 +3,13 @@ package main
 //import
 import (
 	"github.com/distuurbia/firstTask/internal/handler"
-	//"github.com/distuurbia/firstTask/internal/model"
-	"github.com/distuurbia/firstTask/internal/repository"
+	"github.com/distuurbia/firstTask/internal/repository/postgreRep"
 	"github.com/distuurbia/firstTask/internal/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"context"
 	"fmt"
-	//"github.com/google/uuid"
-	// "os"
-	// "github.com/distuurbia/firstTask/internal/model"
-	// "github.com/distuurbia/firstTask/internal/repository"
-	 "github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 func Connect() (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig("postgres://personuser:minovich12@localhost:5432/persondb")
