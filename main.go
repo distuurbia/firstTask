@@ -3,7 +3,7 @@ package main
 //import
 import (
 	"github.com/distuurbia/firstTask/internal/handler"
-	"github.com/distuurbia/firstTask/internal/repository/postgreRep"
+	"github.com/distuurbia/firstTask/internal/repository"
 	"github.com/distuurbia/firstTask/internal/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -29,19 +29,19 @@ func main() {
 		fmt.Println("Could not construct the pool: ", err)
 	}
 	defer dbpool.Close()
-	rps := repository.NewRepository(dbpool)
-	srv := service.NewService(rps)
-	h := handler.NewHandler(srv)
+	persPgx := repository.NewRepository(dbpool)
+	srv := service.NewService(persPgx)
+	handl := handler.NewHandler(srv)
 
 	e := echo.New()
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.POST("/persondb", h.Create)
-	e.GET("/persondb/:id", h.ReadRow)
-	e.PUT("persondb/:id", h.Update)
-	e.DELETE("persondb/:id", h.Delete)
+	e.POST("/persondb", handl.Create)
+	e.GET("/persondb/:id", handl.ReadRow)
+	e.PUT("persondb/:id", handl.Update)
+	e.DELETE("persondb/:id", handl.Delete)
 	e.Logger.Fatal(e.Start(":8080"))
 
 }
