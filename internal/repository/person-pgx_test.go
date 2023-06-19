@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"time"
+
 	"os"
 	"testing"
-	"time"
 
 	"github.com/distuurbia/firstTask/internal/model"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -50,12 +50,14 @@ func TestMain(m *testing.M) {
 
 	rps = NewRepository(dbpool)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-	if err != nil {
-		log.Fatal("Could not construct the pool: ", err)
-	}
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://personUserMongoDB:minovich12@localhost:27017"))
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			panic(err)
+		}
+	}()
 	mongoRps = NewMongoRep(client)
 	exitVal := m.Run()
 	os.Exit(exitVal)
@@ -96,7 +98,8 @@ func Test_PgxUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, testVladimir.Id, pgxVladimir.Id)
 	require.Equal(t, testVladimir.Salary, pgxVladimir.Salary)
-	require.Equal(t, testVladimir.Married, pgxVladimir.Id)
+	require.Equal(t, testVladimir.Married, pgxVladimir.Married)
+	require.Equal(t, testVladimir.Profession, pgxVladimir.Profession)
 }
 
 func Test_PgxUpdateNotFound(t *testing.T) {

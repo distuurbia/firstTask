@@ -6,6 +6,7 @@ import (
 
 	"github.com/distuurbia/firstTask/internal/model"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -38,17 +39,25 @@ func (r *PersonPgx) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, e
 }
 
 func (r *PersonPgx) Update(ctx context.Context, p *model.Person) error {
-	_, err := r.db.Exec(ctx, "UPDATE persondb SET salary = $1, married = $2, profession = $3 WHERE id = $4", p.Salary, p.Married, p.Profession, p.Id)
+	_, err := r.ReadRow(ctx, p.Id)
+	if err != nil{
+		return pgx.ErrNoRows
+	}
+	_, err = r.db.Exec(ctx, "UPDATE persondb SET salary = $1, married = $2, profession = $3 WHERE id = $4", p.Salary, p.Married, p.Profession, p.Id)
 	if err != nil {
-		return fmt.Errorf("Update %w", err)
+		return fmt.Errorf("update %w", err)
 	}
 	return nil
 }
 
 func (r *PersonPgx) Delete(ctx context.Context, id uuid.UUID) error {
-	_, err := r.db.Exec(ctx, "DELETE FROM persondb WHERE id = $1", id)
+	_, err := r.ReadRow(ctx, id)
+	if err != nil{
+		return pgx.ErrNoRows
+	}
+	_, err = r.db.Exec(ctx, "DELETE FROM persondb WHERE id = $1", id)
 	if err != nil {
-		return fmt.Errorf("Delete %w", err)
+		return fmt.Errorf("delete %w", err)
 	}
 	return nil
 }

@@ -19,14 +19,17 @@ func NewMongoRep(client *mongo.Client) *PersonMongo {
 }
 
 func (mongoRps *PersonMongo) CreateMongo(ctx context.Context, pers *model.Person) error {
-	coll := mongoRps.client.Database("mongoPerson").Collection("persons")
+	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	_, err := coll.InsertOne(ctx, pers)
-	return fmt.Errorf("failed to create: %w", err)
+	if err != nil{
+		return fmt.Errorf("failed to create: %w", err)
+	}
+	return nil
 
 }
 
 func (mongoRps *PersonMongo) ReadRowMongo(ctx context.Context, id uuid.UUID) (*model.Person, error) {
-	coll := mongoRps.client.Database("mongoPerson").Collection("persons")
+	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"id": id}
 	var pers model.Person
 	err := coll.FindOne(ctx, filter).Decode(&pers)
@@ -36,15 +39,3 @@ func (mongoRps *PersonMongo) ReadRowMongo(ctx context.Context, id uuid.UUID) (*m
 	return &pers, nil
 }
 
-// func ConnectMongo(){
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-// 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-
-// 	defer func() {
-// 		if err = client.Disconnect(ctx); err != nil {
-// 			panic(err)
-// 		}
-// 	}()
-
-// }
