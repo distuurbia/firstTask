@@ -14,50 +14,48 @@ type PersonPgx struct {
 	db *pgxpool.Pool
 }
 
-func NewRepository(db *pgxpool.Pool) *PersonPgx {
+func NewPgxRep(db *pgxpool.Pool) *PersonPgx {
 	return &PersonPgx{db: db}
 }
 
-func (r *PersonPgx) Create(ctx context.Context, p *model.Person) error {
-	if p == nil {
+func (pgxRps *PersonPgx) Create(ctx context.Context, pers *model.Person) error {
+	if pers == nil {
 		return ErrNil
 	}
-	_, err := r.db.Exec(ctx, "INSERT INTO persondb(salary, married, profession, id) VALUES($1, $2, $3, $4)", p.Salary, p.Married, p.Profession, p.Id)
+	_, err := pgxRps.db.Exec(ctx, "INSERT INTO persondb(salary, married, profession, id) VALUES($1, $2, $3, $4)", pers.Salary, pers.Married, pers.Profession, pers.Id)
 	if err != nil {
-		return fmt.Errorf("create %w", err)
+		return fmt.Errorf("%w", err)
 	}
 	return nil
 }
 
-func (r *PersonPgx) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
-	var p model.Person
-	err := r.db.QueryRow(ctx, "SELECT id, salary, married, profession FROM persondb WHERE id = $1", id).Scan(&p.Id, &p.Salary, &p.Married, &p.Profession)
+func (pgxRps *PersonPgx) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
+	var pers model.Person
+	err := pgxRps.db.QueryRow(ctx, "SELECT id, salary, married, profession FROM persondb WHERE id = $1", id).Scan(&pers.Id, &pers.Salary, &pers.Married, &pers.Profession)
 	if err != nil {
-		return &p, fmt.Errorf("readRow %w", err)
+		return &pers, fmt.Errorf("%w", err)
 	}
-	return &p, nil
+	return &pers, nil
 }
 
-func (r *PersonPgx) Update(ctx context.Context, p *model.Person) error {
-	_, err := r.ReadRow(ctx, p.Id)
-	if err != nil{
-		return pgx.ErrNoRows
-	}
-	_, err = r.db.Exec(ctx, "UPDATE persondb SET salary = $1, married = $2, profession = $3 WHERE id = $4", p.Salary, p.Married, p.Profession, p.Id)
+func (pgxRps *PersonPgx) Update(ctx context.Context, pers *model.Person) error {
+	res, err := pgxRps.db.Exec(ctx, "UPDATE persondb SET salary = $1, married = $2, profession = $3 WHERE id = $4", pers.Salary, pers.Married, pers.Profession, pers.Id)
 	if err != nil {
-		return fmt.Errorf("update %w", err)
+		return fmt.Errorf("%w", err)
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }
 
-func (r *PersonPgx) Delete(ctx context.Context, id uuid.UUID) error {
-	_, err := r.ReadRow(ctx, id)
-	if err != nil{
-		return pgx.ErrNoRows
-	}
-	_, err = r.db.Exec(ctx, "DELETE FROM persondb WHERE id = $1", id)
+func (pgxRps *PersonPgx) Delete(ctx context.Context, id uuid.UUID) error {
+	res, err := pgxRps.db.Exec(ctx, "DELETE FROM persondb WHERE id = $1", id)
 	if err != nil {
-		return fmt.Errorf("delete %w", err)
+		return fmt.Errorf("%w", err)
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
 	}
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"os"
@@ -48,14 +49,14 @@ func TestMain(m *testing.M) {
 	}
 	defer dbpool.Close()
 
-	rps = NewRepository(dbpool)
+	rps = NewPgxRep(dbpool)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://personUserMongoDB:minovich12@localhost:27017"))
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}()
 	mongoRps = NewMongoRep(client)
@@ -69,7 +70,10 @@ func Test_PgxCreate(t *testing.T) {
 	require.NoError(t, err)
 	testVladimir, err := rps.ReadRow(context.Background(), pgxVladimir.Id)
 	require.NoError(t, err)
-	require.Equal(t, *testVladimir, pgxVladimir)
+	require.Equal(t, testVladimir.Id, pgxVladimir.Id)
+	require.Equal(t, testVladimir.Salary, pgxVladimir.Salary)
+	require.Equal(t, testVladimir.Married, pgxVladimir.Married)
+	require.Equal(t, testVladimir.Profession, pgxVladimir.Profession)
 }
 
 func Test_PgxCreateNil(t *testing.T) {
@@ -78,10 +82,27 @@ func Test_PgxCreateNil(t *testing.T) {
 
 }
 
+func Test_PgxCreateDuplicate(t *testing.T){
+	err := rps.Create(context.Background(), &pgxVladimir)
+	require.Error(t, err)
+}
+
+func Test_PgxCreateContextTimeout(t *testing.T){
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	time.Sleep(1*time.Second)
+	defer cancel()
+	err := rps.Create(ctx, &pgxVladimir)
+	require.True(t, errors.Is(err, context.DeadlineExceeded))
+	
+
+}
 func Test_PgxReadRow(t *testing.T) {
 	testVladimir, err := rps.ReadRow(context.Background(), pgxVladimir.Id)
 	require.NoError(t, err)
-	require.Equal(t, *testVladimir, pgxVladimir)
+	require.Equal(t, testVladimir.Id, pgxVladimir.Id)
+	require.Equal(t, testVladimir.Salary, pgxVladimir.Salary)
+	require.Equal(t, testVladimir.Married, pgxVladimir.Married)
+	require.Equal(t, testVladimir.Profession, pgxVladimir.Profession)
 }
 
 func Test_PgxReadRowNotFound(t *testing.T) {
@@ -90,8 +111,19 @@ func Test_PgxReadRowNotFound(t *testing.T) {
 	require.True(t, errors.Is(err, pgx.ErrNoRows))
 }
 
+func Test_PgxReadRowContextTimeout(t *testing.T){
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	time.Sleep(1*time.Second)
+	defer cancel()
+	_, err := rps.ReadRow(ctx, pgxVladimir.Id)
+	require.True(t, errors.Is(err, context.DeadlineExceeded))
+
+}
+
 func Test_PgxUpdate(t *testing.T) {
 	pgxVladimir.Salary = 700
+	pgxVladimir.Married = false
+	pgxVladimir.Profession = "Lawer"
 	err := rps.Update(context.Background(), &pgxVladimir)
 	require.NoError(t, err)
 	testVladimir, err := rps.ReadRow(context.Background(), pgxVladimir.Id)
@@ -102,21 +134,39 @@ func Test_PgxUpdate(t *testing.T) {
 	require.Equal(t, testVladimir.Profession, pgxVladimir.Profession)
 }
 
+
 func Test_PgxUpdateNotFound(t *testing.T) {
 	var emptyEntity model.Person
 	err := rps.Update(context.Background(), &emptyEntity)
 	require.True(t, errors.Is(err, pgx.ErrNoRows))
 }
 
-func Test_Delete(t *testing.T) {
+func Test_PgxUpdateContextTimeout(t *testing.T){
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	time.Sleep(1*time.Second)
+	defer cancel()
+	err := rps.Update(ctx, &pgxVladimir)
+	require.True(t, errors.Is(err, context.DeadlineExceeded))
+
+}
+
+func Test_PgxDelete(t *testing.T) {
 	err := rps.Delete(context.Background(), pgxVladimir.Id)
 	require.NoError(t, err)
 	_, err = rps.ReadRow(context.Background(), pgxVladimir.Id)
 	require.True(t, errors.Is(err, pgx.ErrNoRows))
 }
 
-func Test_DeleteNotFound(t *testing.T) {
+func Test_PgxDeleteNotFound(t *testing.T) {
 	var id uuid.UUID
 	err := rps.Delete(context.Background(), id)
 	require.True(t, errors.Is(err, pgx.ErrNoRows))
+}
+
+func Test_PgxDeleteContextTimeout(t *testing.T){
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	time.Sleep(1*time.Second)
+	defer cancel()
+	err := rps.Delete(ctx, pgxVladimir.Id)
+	require.True(t, errors.Is(err, context.DeadlineExceeded))
 }

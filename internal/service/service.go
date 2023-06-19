@@ -4,37 +4,41 @@ import (
 	"context"
 
 	"github.com/distuurbia/firstTask/internal/model"
-	"github.com/distuurbia/firstTask/internal/repository"
 	"github.com/google/uuid"
 )
-
+type Repository interface{
+	Create(ctx context.Context, pers *model.Person) error;
+	ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error);
+	Update(ctx context.Context, pers *model.Person) error;
+	Delete(ctx context.Context, id uuid.UUID) error 
+}
 type PersonService struct {
-	persPgx *repository.PersonPgx
+	rps Repository
 }
 
-func NewService(persPgx *repository.PersonPgx) *PersonService {
+func NewService(rps Repository) *PersonService {
 
-	return &PersonService{persPgx: persPgx}
+	return &PersonService{rps: rps}
 
 }
 
-func (srv *PersonService) Create(ctx context.Context, p *model.Person) error {
+func (srv *PersonService) Create(ctx context.Context, pers *model.Person) error {
 
-	return srv.persPgx.Create(ctx, p)
+	return srv.rps.Create(ctx, pers)
 
 }
 func (srv *PersonService) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 
-	return srv.persPgx.ReadRow(ctx, id)
+	return srv.rps.ReadRow(ctx, id)
 
 }
-func (srv *PersonService) Update(ctx context.Context, p *model.Person) error {
+func (srv *PersonService) Update(ctx context.Context, pers *model.Person) error {
 
-	return srv.persPgx.Update(ctx, p)
+	return srv.rps.Update(ctx, pers)
 
 }
 func (srv *PersonService) Delete(ctx context.Context, id uuid.UUID) error {
 
-	return srv.persPgx.Delete(ctx, id)
+	return srv.rps.Delete(ctx, id)
 
 }

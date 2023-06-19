@@ -18,7 +18,10 @@ func NewMongoRep(client *mongo.Client) *PersonMongo {
 	return &PersonMongo{client: client}
 }
 
-func (mongoRps *PersonMongo) CreateMongo(ctx context.Context, pers *model.Person) error {
+func (mongoRps *PersonMongo) Create(ctx context.Context, pers *model.Person) error {
+	if pers == nil {
+		return ErrNil
+	}
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	_, err := coll.InsertOne(ctx, pers)
 	if err != nil{
@@ -28,14 +31,41 @@ func (mongoRps *PersonMongo) CreateMongo(ctx context.Context, pers *model.Person
 
 }
 
-func (mongoRps *PersonMongo) ReadRowMongo(ctx context.Context, id uuid.UUID) (*model.Person, error) {
+func (mongoRps *PersonMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
-	filter := bson.M{"id": id}
+	filter := bson.M{"_id": id}
 	var pers model.Person
 	err := coll.FindOne(ctx, filter).Decode(&pers)
 	if err != nil {
 		return &pers, fmt.Errorf("failed to read %w", err)
 	}
 	return &pers, nil
+}
+
+func (mongoRps *PersonMongo) Update(ctx context.Context, pers *model.Person) error {
+	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+	filter := bson.M{"_id": pers.Id}
+	update := bson.M{"$set": pers}
+	res, err := coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	if res.ModifiedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
+}
+
+func (mongoRps *PersonMongo) Delete(ctx context.Context, id uuid.UUID) error {
+	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+	filter := bson.M{"_id": id}
+	res, err := coll.DeleteOne(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	if res.DeletedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
 }
 
