@@ -120,6 +120,16 @@ func Test_PgxReadRowContextTimeout(t *testing.T){
 
 }
 
+func Test_PgxGetAll(t *testing.T){
+	allPers, err := rps.GetAll(context.Background())
+	require.NoError(t, err)
+	var numberPersons int
+	err = rps.db.QueryRow(context.Background(), "SELECT COUNT(*) FROM persondb").Scan(&numberPersons)
+	require.NoError(t, err)
+	require.Equal(t, len(allPers), numberPersons) 
+
+}
+
 func Test_PgxUpdate(t *testing.T) {
 	pgxVladimir.Salary = 700
 	pgxVladimir.Married = false

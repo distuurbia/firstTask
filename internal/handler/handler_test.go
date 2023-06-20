@@ -7,7 +7,7 @@ import (
 
 	"github.com/distuurbia/firstTask/internal/model"
 	"github.com/distuurbia/firstTask/internal/service"
-	"github.com/distuurbia/firstTask/internal/service/mocks"
+ 	"github.com/distuurbia/firstTask/internal/handler/mocks"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -19,60 +19,60 @@ var vladimir = model.Person{
 	Married: false,
 	Profession: "teacher",
 }
-var rps *mocks.Repository
+var srvc *mocks.Service
 
 func TestMain(m *testing.M){
-	rps = new(mocks.Repository)
+	srvc = new(mocks.Service)
 	exitVal := m.Run()
 	os.Exit(exitVal)
 }
 func TestCreate(t *testing.T){
-	rps.On("Create", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
+	srvc.On("Create", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
 
-	srv := service.NewService(rps)
-	err := srv.Create(context.Background(), &vladimir)
+	handl := service.NewService(srvc)
+	err := handl.Create(context.Background(), &vladimir)
 	assert.Nil(t, err)
 
-	rps.AssertExpectations(t)
+	srvc.AssertExpectations(t)
 }
 
 func TestReadRow(t *testing.T){
-	rps.On("ReadRow", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(&vladimir, nil)
+	srvc.On("ReadRow", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(&vladimir, nil)
 
-	srv := service.NewService(rps)
-	testVladimir, err := srv.ReadRow(context.Background(), vladimir.Id)
+	handle := service.NewService(srvc)
+	testVladimir, err := handle.ReadRow(context.Background(), vladimir.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, testVladimir.Id, vladimir.Id)
 	assert.Equal(t, testVladimir.Salary, vladimir.Salary)
 	assert.Equal(t, testVladimir.Married, vladimir.Married)
 	assert.Equal(t, testVladimir.Profession, vladimir.Profession)
 
-	rps.AssertExpectations(t)
+	srvc.AssertExpectations(t)
 }
 
 func TestUpdateRow(t *testing.T){
-	rps.On("Update", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
+	srvc.On("Update", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
 	vladimir.Salary = 700
 	vladimir.Married = false
 	vladimir.Profession = "Lawer"
-	srv := service.NewService(rps)
-	err := srv.Update(context.Background(), &vladimir)
+	handle := service.NewService(srvc)
+	err := handle.Update(context.Background(), &vladimir)
 	assert.Nil(t, err)
-	testVladimir, err := srv.ReadRow(context.Background(), vladimir.Id)
+	testVladimir, err := handle.ReadRow(context.Background(), vladimir.Id)
 	assert.Equal(t, testVladimir.Id, vladimir.Id)
 	assert.Equal(t, testVladimir.Salary, vladimir.Salary)
 	assert.Equal(t, testVladimir.Married, vladimir.Married)
 	assert.Equal(t, testVladimir.Profession, vladimir.Profession)
 
-	rps.AssertExpectations(t)
+	srvc.AssertExpectations(t)
 }
 
 func TestDelete(t *testing.T){
-	rps.On("Delete", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(nil)
+	srvc.On("Delete", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(nil)
 
-	srv := service.NewService(rps)
-	err := srv.Delete(context.Background(), vladimir.Id)
+	handle := service.NewService(srvc)
+	err := handle.Delete(context.Background(), vladimir.Id)
 	assert.Nil(t, err)
 
-	rps.AssertExpectations(t)
+	srvc.AssertExpectations(t)
 }

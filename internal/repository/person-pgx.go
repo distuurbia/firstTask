@@ -38,6 +38,24 @@ func (pgxRps *PersonPgx) ReadRow(ctx context.Context, id uuid.UUID) (*model.Pers
 	return &pers, nil
 }
 
+func (pgxRps *PersonPgx) GetAll(ctx context.Context) ([]model.Person, error) {
+	var allPers []model.Person
+	rows, err := pgxRps.db.Query(ctx, "SELECT id, salary, married, profession FROM persondb")
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	var pers model.Person
+	for rows.Next() {
+		err = rows.Scan(&pers.Id, &pers.Salary, &pers.Married, &pers.Profession)
+		if err != nil {
+			return allPers, fmt.Errorf("%w", err)
+		}
+		allPers = append(allPers, pers)
+	}
+	return allPers, nil
+}
+
 func (pgxRps *PersonPgx) Update(ctx context.Context, pers *model.Person) error {
 	res, err := pgxRps.db.Exec(ctx, "UPDATE persondb SET salary = $1, married = $2, profession = $3 WHERE id = $4", pers.Salary, pers.Married, pers.Profession, pers.Id)
 	if err != nil {

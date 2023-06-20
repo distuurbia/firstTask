@@ -9,6 +9,7 @@ import (
 type Repository interface{
 	Create(ctx context.Context, pers *model.Person) error;
 	ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error);
+	GetAll(ctx context.Context) ([]model.Person, error)
 	Update(ctx context.Context, pers *model.Person) error;
 	Delete(ctx context.Context, id uuid.UUID) error 
 }
@@ -41,4 +42,7 @@ func (srv *PersonService) Delete(ctx context.Context, id uuid.UUID) error {
 
 	return srv.rps.Delete(ctx, id)
 
+}
+func (srv *PersonService) GetAll(ctx context.Context) ([]model.Person, error){
+	return srv.rps.GetAll(ctx)
 }

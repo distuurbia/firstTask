@@ -1,19 +1,25 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/distuurbia/firstTask/internal/model"
-	"github.com/distuurbia/firstTask/internal/service"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
-type PersonHandler struct {
-	srvc *service.PersonService
+type Service interface{
+	Create(ctx context.Context, pers *model.Person) error;
+	ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error);
+	GetAll(ctx context.Context) ([]model.Person, error)
+	Update(ctx context.Context, pers *model.Person) error;
+	Delete(ctx context.Context, id uuid.UUID) error 
 }
-
-func NewHandler(srvc *service.PersonService) *PersonHandler {
+type PersonHandler struct {
+	srvc Service
+}
+func NewHandler(srvc Service) *PersonHandler {
 	return &PersonHandler{srvc: srvc}
 }
 func (handl *PersonHandler) Create(c echo.Context) error {
@@ -38,6 +44,14 @@ func (handl *PersonHandler) ReadRow(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to read check if id is UUID format or that such person exist")
 	}
 	return c.JSON(http.StatusOK, readPerson)
+}
+
+func (handl *PersonHandler) GetAll(c echo.Context) error {
+	persAll, err := handl.srvc.GetAll(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to get all persons")
+	}
+	return c.JSON(http.StatusOK, persAll)
 }
 
 func (handl *PersonHandler) Update(c echo.Context) error {
