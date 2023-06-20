@@ -16,7 +16,7 @@ import (
 var mongoRps *PersonMongo
 
 var mongoVladimir = model.Person{
-	Id:         uuid.New(),
+	ID:         uuid.New(),
 	Salary:     2000,
 	Married:    true,
 	Profession: "policeman",
@@ -25,9 +25,9 @@ var mongoVladimir = model.Person{
 func Test_MongoCreate(t *testing.T) {
 	err := mongoRps.Create(context.Background(), &mongoVladimir)
 	require.NoError(t, err)
-	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.Id)
+	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
 	require.NoError(t, err)
-	require.Equal(t, mongoVladimir.Id, testMongoVladimir.Id)
+	require.Equal(t, mongoVladimir.ID, testMongoVladimir.ID)
 	require.Equal(t, mongoVladimir.Salary, testMongoVladimir.Salary)
 	require.Equal(t, mongoVladimir.Married, testMongoVladimir.Married)
 	require.Equal(t, mongoVladimir.Married, testMongoVladimir.Married)
@@ -36,7 +36,6 @@ func Test_MongoCreate(t *testing.T) {
 func Test_MongoCreateNil(t *testing.T) {
 	err := mongoRps.Create(context.Background(), nil)
 	require.True(t, errors.Is(err, ErrNil))
-
 }
 
 func Test_MongoCreateDuplicate(t *testing.T) {
@@ -53,9 +52,9 @@ func Test_MongoCreateContextTimeout(t *testing.T) {
 }
 
 func Test_MongoReadRow(t *testing.T) {
-	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.Id)
+	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
 	require.NoError(t, err)
-	require.Equal(t, mongoVladimir.Id, testMongoVladimir.Id)
+	require.Equal(t, mongoVladimir.ID, testMongoVladimir.ID)
 	require.Equal(t, mongoVladimir.Salary, testMongoVladimir.Salary)
 	require.Equal(t, mongoVladimir.Married, testMongoVladimir.Married)
 	require.Equal(t, mongoVladimir.Married, testMongoVladimir.Married)
@@ -71,7 +70,7 @@ func Test_MongoReadRowContextTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	time.Sleep(1 * time.Second)
 	defer cancel()
-	_, err := mongoRps.ReadRow(ctx, mongoVladimir.Id)
+	_, err := mongoRps.ReadRow(ctx, mongoVladimir.ID)
 	require.True(t, errors.Is(err, context.DeadlineExceeded))
 }
 
@@ -79,14 +78,10 @@ func Test_MongoGetAll(t *testing.T) {
 	allPers, err := mongoRps.GetAll(context.Background())
 	require.NoError(t, err)
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
-
 	filter := bson.M{}
-
 	numberPersons, err := coll.CountDocuments(context.Background(), filter)
-
 	require.NoError(t, err)
 	require.Equal(t, len(allPers), int(numberPersons))
-
 }
 
 func Test_MongoUpdate(t *testing.T) {
@@ -95,8 +90,9 @@ func Test_MongoUpdate(t *testing.T) {
 	mongoVladimir.Profession = "Security"
 	err := mongoRps.Update(context.Background(), &mongoVladimir)
 	require.NoError(t, err)
-	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.Id)
-	require.Equal(t, mongoVladimir.Id, testMongoVladimir.Id)
+	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
+	require.NoError(t, err)
+	require.Equal(t, mongoVladimir.ID, testMongoVladimir.ID)
 	require.Equal(t, mongoVladimir.Salary, testMongoVladimir.Salary)
 	require.Equal(t, mongoVladimir.Married, testMongoVladimir.Married)
 	require.Equal(t, mongoVladimir.Married, testMongoVladimir.Married)
@@ -117,9 +113,9 @@ func Test_MongoUpdateContextTimeout(t *testing.T) {
 }
 
 func Test_MongoDelete(t *testing.T) {
-	err := mongoRps.Delete(context.Background(), mongoVladimir.Id)
+	err := mongoRps.Delete(context.Background(), mongoVladimir.ID)
 	require.NoError(t, err)
-	_, err = mongoRps.ReadRow(context.Background(), mongoVladimir.Id)
+	_, err = mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
 	require.True(t, errors.Is(err, mongo.ErrNoDocuments))
 }
 
@@ -133,6 +129,6 @@ func Test_MongoDeleteontextTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	time.Sleep(1 * time.Second)
 	defer cancel()
-	err := mongoRps.Delete(ctx, mongoVladimir.Id)
+	err := mongoRps.Delete(ctx, mongoVladimir.ID)
 	require.True(t, errors.Is(err, context.DeadlineExceeded))
 }

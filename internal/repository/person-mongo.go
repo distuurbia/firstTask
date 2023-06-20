@@ -1,3 +1,4 @@
+// Package repository is a package for work with db methods
 package repository
 
 import (
@@ -10,27 +11,30 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// PersonMongo contains object of type *mongo.Client
 type PersonMongo struct {
 	client *mongo.Client
 }
 
+// NewMongoRep accepts object of type *mongo.Client and returns an object of type *PersonMongo
 func NewMongoRep(client *mongo.Client) *PersonMongo {
 	return &PersonMongo{client: client}
 }
 
+// Create creates document in mongoDB collection
 func (mongoRps *PersonMongo) Create(ctx context.Context, pers *model.Person) error {
 	if pers == nil {
 		return ErrNil
 	}
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	_, err := coll.InsertOne(ctx, pers)
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("failed to create: %w", err)
 	}
 	return nil
-
 }
 
+// ReadRow reads document from mongoDB collection
 func (mongoRps *PersonMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": id}
@@ -42,6 +46,7 @@ func (mongoRps *PersonMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.
 	return &pers, nil
 }
 
+// GetAll reads all documents from mongoDB collection
 func (mongoRps *PersonMongo) GetAll(ctx context.Context) ([]model.Person, error) {
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{}
@@ -62,9 +67,10 @@ func (mongoRps *PersonMongo) GetAll(ctx context.Context) ([]model.Person, error)
 	return allPers, nil
 }
 
+// Update update the document of mongoDB collection
 func (mongoRps *PersonMongo) Update(ctx context.Context, pers *model.Person) error {
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
-	filter := bson.M{"_id": pers.Id}
+	filter := bson.M{"_id": pers.ID}
 	update := bson.M{"$set": pers}
 	res, err := coll.UpdateOne(ctx, filter, update)
 	if err != nil {
@@ -76,6 +82,7 @@ func (mongoRps *PersonMongo) Update(ctx context.Context, pers *model.Person) err
 	return nil
 }
 
+// Delete deletes the document of mongoDB collection
 func (mongoRps *PersonMongo) Delete(ctx context.Context, id uuid.UUID) error {
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": id}
@@ -88,4 +95,3 @@ func (mongoRps *PersonMongo) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 	return nil
 }
-
