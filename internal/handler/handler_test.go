@@ -38,7 +38,7 @@ func TestCreate(t *testing.T) {
 
 	handl := service.NewService(srvc)
 	err := handl.Create(context.Background(), &vladimir)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	srvc.AssertExpectations(t)
 }
@@ -56,6 +56,14 @@ func TestReadRow(t *testing.T) {
 	srvc.AssertExpectations(t)
 }
 
+func TestGetAll(t *testing.T) {
+	srvc.On("GetAll", mock.Anything).Return([]model.Person{vladimir}, nil)
+	handle := service.NewService(srvc)
+	allPers, err := handle.GetAll(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, len(allPers), len([]model.Person{vladimir}))
+}
+
 // TestUpdate is a mocktest for Update method of interface Service
 func TestUpdate(t *testing.T) {
 	srvc.On("Update", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
@@ -64,7 +72,7 @@ func TestUpdate(t *testing.T) {
 	vladimir.Profession = "Lawer"
 	handle := service.NewService(srvc)
 	err := handle.Update(context.Background(), &vladimir)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	testVladimir, err := handle.ReadRow(context.Background(), vladimir.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, testVladimir.ID, vladimir.ID)
@@ -80,7 +88,7 @@ func TestDelete(t *testing.T) {
 
 	handle := service.NewService(srvc)
 	err := handle.Delete(context.Background(), vladimir.ID)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	srvc.AssertExpectations(t)
 }

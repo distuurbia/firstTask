@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -26,37 +27,77 @@ var pgxVladimir = model.Person{
 	Profession: "policeman",
 }
 
-func PgxConnect() (*pgxpool.Pool, error) {
-	cfg, err := pgxpool.ParseConfig("postgres://personuser:minovich12@localhost:5432/persondb")
+func SetupTestPgx() (*pgxpool.Pool, func(), error) {
+	pool, err := dockertest.NewPool("")
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("could not construct pool: %w", err)
+	}
+	resource, err := pool.Run("postgres", "latest", []string{
+		"POSTGRES_USER=personuser",
+		"POSTGRESQL_PASSWORD=minovich12",
+		"POSTGRES_DB=persondb"})
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not start resource: %w", err)
+	}
+	dbURL := fmt.Sprintf("postgres://personuser:minovich12@localhost:%s/persondb", resource.GetPort("5432"))
+	cfg, err := pgxpool.ParseConfig(dbURL)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse dbURL: %w", err)
 	}
 	dbpool, err := pgxpool.NewWithConfig(context.Background(), cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("failed to connect pgxpool: %w", err)
 	}
-	return dbpool, nil
+	cleanup := func() {
+		dbpool.Close()
+		pool.Purge(resource)
+	}
+	return dbpool, cleanup, nil
+}
+func SetupTestMongoDB() (*mongo.Client, func(), error) {
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not construct pool: %w", err)
+	}
+	resource, err := pool.Run("mongo", "latest", []string{
+		"MONGO_INITDB_ROOT_USERNAME=personUserMongoDB",
+		"MONGO_INITDB_ROOT_PASSWORD=minovich12",
+		"MONGO_INITDB_DATABASE=personMongoDB"})
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not start resource: %w", err)
+	}
+
+	port := resource.GetPort("27017/tcp")
+	mongoURL := fmt.Sprintf("mongodb://personUserMongoDB:minovich12@localhost:%s", port)
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURL))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to connect mongoDB: %w", err)
+	}
+	cleanup := func() {
+		client.Disconnect(context.Background())
+		pool.Purge(resource)
+	}
+	return client, cleanup, nil
 }
 
 func TestMain(m *testing.M) {
-	dbpool, err := PgxConnect()
+	dbpool, cleanupPgx, err := SetupTestPgx()
 	if err != nil {
 		fmt.Println("Could not construct the pool: ", err)
-		dbpool.Close()
+		cleanupPgx()
 		os.Exit(1)
 	}
 	rps = NewPgxRep(dbpool)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://personUserMongoDB:minovich12@localhost:27017"))
+	client, cleanupMongo, err := SetupTestMongoDB()
 	if err != nil {
 		fmt.Println(err)
-		cancel()
+		cleanupMongo()
 		os.Exit(1)
 	}
 	mongoRps = NewMongoRep(client)
 	exitVal := m.Run()
-	dbpool.Close()
-	client.Disconnect(ctx)
+	cleanupPgx()
+	cleanupMongo()
 	os.Exit(exitVal)
 }
 
