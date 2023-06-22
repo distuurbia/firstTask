@@ -16,4 +16,12 @@ curl -X PUT \
 curl -X DELETE http://localhost:8080/persondb/09277794-cd9d-46d3-a4b7-06458c7c63a5
 
 ###
-curl http://loacalhost:8080/
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d {'"Username":"alek", "Password":"minovich12"'} \
+  http://localhost:8080/signIn
+###
+curl -X POST  \
+  -H 'Content-Type: application/json' \
+  -d {'"Username":"alek", "Password":"minovich12"'} \
+  http://localhost:8080/login

@@ -3,7 +3,7 @@ package model
 
 import "github.com/google/uuid"
 
-// Person struct - type of a record for dbs
+// Person contains an info about the person and will be written in a personsdb table
 type Person struct {
 	ID         uuid.UUID `json:"ID" bson:"_id"`
 	Salary     int

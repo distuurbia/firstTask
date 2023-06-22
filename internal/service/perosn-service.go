@@ -9,7 +9,7 @@ import (
 )
 
 // Repository is an interface that contains CRUD methods and GetAll
-type Repository interface {
+type PersonRepository interface {
 	Create(ctx context.Context, pers *model.Person) error
 	ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error)
 	GetAll(ctx context.Context) ([]model.Person, error)
@@ -19,35 +19,35 @@ type Repository interface {
 
 // PersonService contains Repository interface
 type PersonService struct {
-	rps Repository
+	persRps PersonRepository
 }
 
 // NewService accepts Repository object and returnes an object of type *PersonService
-func NewService(rps Repository) *PersonService {
-	return &PersonService{rps: rps}
+func NewService(persRps PersonRepository) *PersonService {
+	return &PersonService{persRps: persRps}
 }
 
 // Create is a method of PersonService that calls Create method of Repository
 func (srv *PersonService) Create(ctx context.Context, pers *model.Person) error {
-	return srv.rps.Create(ctx, pers)
+	return srv.persRps.Create(ctx, pers)
 }
 
 // ReadRow is a method of PersonService that calls ReadRow method of Repository
 func (srv *PersonService) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
-	return srv.rps.ReadRow(ctx, id)
+	return srv.persRps.ReadRow(ctx, id)
 }
 
 // Update is a method of PersonService that calls Update method of Repository
 func (srv *PersonService) Update(ctx context.Context, pers *model.Person) error {
-	return srv.rps.Update(ctx, pers)
+	return srv.persRps.Update(ctx, pers)
 }
 
 // Delete is a method of PersonService that calls Delete method of Repository
 func (srv *PersonService) Delete(ctx context.Context, id uuid.UUID) error {
-	return srv.rps.Delete(ctx, id)
+	return srv.persRps.Delete(ctx, id)
 }
 
 // GetAll is a method of PersonService that calls  method of Repository
 func (srv *PersonService) GetAll(ctx context.Context) ([]model.Person, error) {
-	return srv.rps.GetAll(ctx)
+	return srv.persRps.GetAll(ctx)
 }

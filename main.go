@@ -4,9 +4,9 @@ package main
 import (
 	"context"
 	"fmt"
-
 	"log"
-	"os"
+	// "os"
+
 	"time"
 
 	"github.com/distuurbia/firstTask/internal/handler"
@@ -46,49 +46,55 @@ func ConnectMongo() (*mongo.Client, error) {
 
 // main is an executable function
 func main() {
-	var handl *handler.PersonHandler
+	var handl *handler.EntityHandler
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
-	var dbChoose int
-	dbChoose, err := fmt.Scan()
-	if err != nil {
-		fmt.Println("failed to scan")
-	}
-	const PostgreSQL = 1
-	const MongoDB = 2
-	switch dbChoose {
-	case PostgreSQL:
+	// var dbChoose int
+	// _, err := fmt.Scan(&dbChoose)
+	// if err != nil {
+	// 	fmt.Println("failed to scan")
+	// }
+	// const PostgreSQL = 1
+	// const MongoDB = 2
+	// switch dbChoose {
+	// case PostgreSQL:
 		dbpool, err := ConnectPgx()
 		if err != nil {
 			log.Fatal("could not construct the pool: ", err)
 		}
 		defer dbpool.Close()
 		persPgx := repository.NewPgxRep(dbpool)
-		srv := service.NewService(persPgx)
-		handl = handler.NewHandler(srv)
-	case MongoDB:
-		client, err := ConnectMongo()
-		if err != nil {
-			fmt.Println("could not construct the client: ", err)
-		}
-		persMongo := repository.NewMongoRep(client)
-		srv := service.NewService(persMongo)
-		handl = handler.NewHandler(srv)
-		defer func() {
-			if err = client.Disconnect(context.Background()); err != nil {
-				log.Fatal("%w", err)
-			}
-		}()
-	default:
-		fmt.Println("The wrong number!")
-		defer os.Exit(1)
-	}
+		persSrv := service.NewService(persPgx)
+		userSrv := service.NewUserService(persPgx)
+		handl = handler.NewHandler(persSrv, userSrv)
+	// case MongoDB:
+	// 	client, err := ConnectMongo()
+	// 	if err != nil {
+	// 		fmt.Println("could not construct the client: ", err)
+	// 	}
+	// 	persMongo := repository.NewMongoRep(client)
+	// 	srv := service.NewService(persMongo)
+	// 	handl = handler.NewHandler(srv)
+	// 	defer func() {
+	// 		if err = client.Disconnect(context.Background()); err != nil {
+	// 			log.Fatal("%w", err)
+	// 		}
+	// 	}()
+	// default:
+	// 	fmt.Println("The wrong number!")
+	// 	defer os.Exit(1)
+	// }
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.POST("/persondb", handl.Create)
 	e.GET("/persondb/:id", handl.ReadRow)
-	e.PUT("persondb/:id", handl.Update)
-	e.DELETE("persondb/:id", handl.Delete)
+	e.PUT("/persondb/:id", handl.Update)
+	e.DELETE("/persondb/:id", handl.Delete)
+
+	e.POST("/signIn", handl.SignIn)
+	e.POST("/login", handl.Login)
 	e.Logger.Fatal(e.Start(":8080"))
 
 }
+
+
