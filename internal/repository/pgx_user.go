@@ -9,7 +9,7 @@ import (
 )
 
 // SignIn create new user in users table
-func (pgxRps *PersonPgx) SignIn(ctx context.Context, user *model.User) error {
+func (pgxRps *RepositoryPgx) SignUp(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return ErrNil
 	}
@@ -29,16 +29,16 @@ func (pgxRps *PersonPgx) SignIn(ctx context.Context, user *model.User) error {
 }
 
 // SignIn verifies user with checking hash of the password from users table
-func (pgxRps *PersonPgx) GetPassword(ctx context.Context, user *model.User) (string, error) {
-	var hash string
+func (pgxRps *RepositoryPgx) GetPasswordByUsername(ctx context.Context, user *model.User) ([]byte, error) {
+	var hash []byte
 	err := pgxRps.db.QueryRow(ctx, "SELECT password FROM users WHERE username = $1", user.Username).Scan(&hash)
 	if err != nil {
-		return "", fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 	return hash, nil
 }
 
-func (pgxRps *PersonPgx) AddRefreshToken(ctx context.Context, user *model.User) error{
+func (pgxRps *RepositoryPgx) AddRefreshToken(ctx context.Context, user *model.User) error{
 	_, err := pgxRps.db.Exec(ctx, "UPDATE users SET refreshtoken = $1 WHERE username = $2", user.RefreshToken,  user.Username)
 	if err != nil {
 		return fmt.Errorf("%w", err)

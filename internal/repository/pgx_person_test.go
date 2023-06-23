@@ -18,7 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var rps *PersonPgx
+var rps *RepositoryPgx
 
 var pgxVladimir = model.Person{
 	ID:         uuid.New(),
@@ -87,7 +87,7 @@ func TestMain(m *testing.M) {
 		cleanupPgx()
 		os.Exit(1)
 	}
-	rps = NewPgxRep(dbpool)
+	rps = NewRepositoryPgx(dbpool)
 	client, cleanupMongo, err := SetupTestMongoDB()
 	if err != nil {
 		fmt.Println(err)

@@ -7,6 +7,6 @@ import "github.com/google/uuid"
 type User struct {
 	ID           uuid.UUID `json:"ID" bson:"_id"`
 	Username     string
-	Password     string
-	RefreshToken string
+	Password     []byte
+	RefreshToken []byte
 }

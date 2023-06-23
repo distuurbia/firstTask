@@ -5,11 +5,14 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+
 	// "os"
 
 	"time"
 
 	"github.com/distuurbia/firstTask/internal/handler"
+	customMidleware "github.com/distuurbia/firstTask/internal/middleware"
 	"github.com/distuurbia/firstTask/internal/repository"
 	"github.com/distuurbia/firstTask/internal/service"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -46,7 +49,7 @@ func ConnectMongo() (*mongo.Client, error) {
 
 // main is an executable function
 func main() {
-	var handl *handler.EntityHandler
+	var handl *handler.HandlerEntity
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
 	// var dbChoose int
 	// _, err := fmt.Scan(&dbChoose)
@@ -62,9 +65,9 @@ func main() {
 			log.Fatal("could not construct the pool: ", err)
 		}
 		defer dbpool.Close()
-		persPgx := repository.NewPgxRep(dbpool)
-		persSrv := service.NewService(persPgx)
-		userSrv := service.NewUserService(persPgx)
+		persPgx := repository.NewRepositoryPgx(dbpool)
+		persSrv := service.NewServicePerson(persPgx)
+		userSrv := service.NewServiceUser(persPgx)
 		handl = handler.NewHandler(persSrv, userSrv)
 	// case MongoDB:
 	// 	client, err := ConnectMongo()
@@ -86,7 +89,7 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.POST("/persondb", handl.Create)
+	e.POST("/persondb", handl.Create, customMidleware.JWTAuth(os.Getenv("SECRET_KEY")))
 	e.GET("/persondb/:id", handl.ReadRow)
 	e.PUT("/persondb/:id", handl.Update)
 	e.DELETE("/persondb/:id", handl.Delete)

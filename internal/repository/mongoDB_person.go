@@ -29,7 +29,7 @@ func (mongoRps *PersonMongo) Create(ctx context.Context, pers *model.Person) err
 	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
 	_, err := coll.InsertOne(ctx, pers)
 	if err != nil {
-		return fmt.Errorf("failed to create: %w", err)
+		return fmt.Errorf("PersonMongo -> Create -> error: %w", err)
 	}
 	return nil
 }
@@ -41,7 +41,7 @@ func (mongoRps *PersonMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.
 	var pers model.Person
 	err := coll.FindOne(ctx, filter).Decode(&pers)
 	if err != nil {
-		return &pers, fmt.Errorf("failed to read %w", err)
+		return &pers, fmt.Errorf("PersonMongo -> ReadRow -> error: %w", err)
 	}
 	return &pers, nil
 }
@@ -54,13 +54,13 @@ func (mongoRps *PersonMongo) GetAll(ctx context.Context) ([]model.Person, error)
 	cursor, err := coll.Find(ctx, filter)
 
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("PersonMongo -> GetAll -> Find -> error: %w", err)
 	}
 	var pers model.Person
 	for cursor.Next(ctx) {
 		err = cursor.Decode(&pers)
 		if err != nil {
-			return allPers, fmt.Errorf("%w", err)
+			return allPers, fmt.Errorf("PersonMongo -> GetAll -> Decode -> error: %w", err)
 		}
 		allPers = append(allPers, pers)
 	}
@@ -74,7 +74,7 @@ func (mongoRps *PersonMongo) Update(ctx context.Context, pers *model.Person) err
 	update := bson.M{"$set": pers}
 	res, err := coll.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return fmt.Errorf("PersonMongo -> Update -> error: %w", err)
 	}
 	if res.ModifiedCount == 0 {
 		return mongo.ErrNoDocuments
@@ -88,7 +88,7 @@ func (mongoRps *PersonMongo) Delete(ctx context.Context, id uuid.UUID) error {
 	filter := bson.M{"_id": id}
 	res, err := coll.DeleteOne(ctx, filter)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return fmt.Errorf("PersonMongo -> Delete -> error: %w", err)
 	}
 	if res.DeletedCount == 0 {
 		return mongo.ErrNoDocuments
