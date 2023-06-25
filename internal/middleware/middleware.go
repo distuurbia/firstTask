@@ -3,60 +3,54 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
-type JWTConfig struct {
-	SigningKey string
-}
-type JWTCustomClaims struct {
-	ID  uuid.UUID `json:"id"`
-	jwt.RegisteredClaims
-}
+var secretKey = os.Getenv("SECRET_KEY")
 
-
-func JWTAuth(signingKey string) echo.MiddlewareFunc {
+func JWTMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
-			token := extractTokenFromHeader(authHeader)
-			if token == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Missing token")
+			if authHeader == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Missing authorization header")
 			}
-			claims, err := validateToken(token, []byte(signingKey))
-			if err != nil {
+
+			tokenString := extractTokenFromHeader(authHeader)
+			if tokenString == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
+			}
+
+			token, err := validateToken(tokenString, secretKey)
+			if err != nil || !token.Valid {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
 			}
-			c.Set("ID", claims.ID)
 			return next(c)
 		}
-		
 	}
 }
 
-func extractTokenFromHeader(authHeader string) string{
+func extractTokenFromHeader(authHeader string) string {
 	parts := strings.Split(authHeader, " ")
-	if len(parts) == 2 {
-		return parts[1]
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return ""
 	}
-	return ""
+	return parts[1]
 }
 
-func validateToken(tokenString string, SigningKey []byte) (*JWTCustomClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &JWTCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return SigningKey, nil
+func validateToken(tokenString, secretKey string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secretKey), nil
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	claims, ok := token.Claims.(JWTCustomClaims)
-	if !ok || !token.Valid {
-		return nil, fmt.Errorf("Invalid token claims")
-	}
-	return &claims, nil
+	return token, nil
 }

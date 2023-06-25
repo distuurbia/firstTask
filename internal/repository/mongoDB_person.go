@@ -11,22 +11,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// PersonMongo contains object of type *mongo.Client
-type PersonMongo struct {
+// RepositoryMongocontains object of type *mongo.Client
+type RepositoryMongo struct {
 	client *mongo.Client
 }
 
 // NewMongoRep accepts object of type *mongo.Client and returns an object of type *PersonMongo
-func NewMongoRep(client *mongo.Client) *PersonMongo {
-	return &PersonMongo{client: client}
+func NewRpsMongo(client *mongo.Client) *RepositoryMongo {
+	return &RepositoryMongo{client: client}
 }
 
 // Create creates document in mongoDB collection
-func (mongoRps *PersonMongo) Create(ctx context.Context, pers *model.Person) error {
+func (rpsMongo *RepositoryMongo) Create(ctx context.Context, pers *model.Person) error {
 	if pers == nil {
 		return ErrNil
 	}
-	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	_, err := coll.InsertOne(ctx, pers)
 	if err != nil {
 		return fmt.Errorf("PersonMongo -> Create -> error: %w", err)
@@ -35,8 +35,8 @@ func (mongoRps *PersonMongo) Create(ctx context.Context, pers *model.Person) err
 }
 
 // ReadRow reads document from mongoDB collection
-func (mongoRps *PersonMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
-	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+func (rpsMongo *RepositoryMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
+	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": id}
 	var pers model.Person
 	err := coll.FindOne(ctx, filter).Decode(&pers)
@@ -47,8 +47,8 @@ func (mongoRps *PersonMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.
 }
 
 // GetAll reads all documents from mongoDB collection
-func (mongoRps *PersonMongo) GetAll(ctx context.Context) ([]model.Person, error) {
-	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+func (rpsMongo *RepositoryMongo) GetAll(ctx context.Context) ([]model.Person, error) {
+	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{}
 	var allPers []model.Person
 	cursor, err := coll.Find(ctx, filter)
@@ -68,8 +68,8 @@ func (mongoRps *PersonMongo) GetAll(ctx context.Context) ([]model.Person, error)
 }
 
 // Update update the document of mongoDB collection
-func (mongoRps *PersonMongo) Update(ctx context.Context, pers *model.Person) error {
-	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+func (rpsMongo *RepositoryMongo) Update(ctx context.Context, pers *model.Person) error {
+	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": pers.ID}
 	update := bson.M{"$set": pers}
 	res, err := coll.UpdateOne(ctx, filter, update)
@@ -83,8 +83,8 @@ func (mongoRps *PersonMongo) Update(ctx context.Context, pers *model.Person) err
 }
 
 // Delete deletes the document of mongoDB collection
-func (mongoRps *PersonMongo) Delete(ctx context.Context, id uuid.UUID) error {
-	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+func (rpsMongo *RepositoryMongo) Delete(ctx context.Context, id uuid.UUID) error {
+	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": id}
 	res, err := coll.DeleteOne(ctx, filter)
 	if err != nil {

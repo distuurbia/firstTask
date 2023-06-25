@@ -5,10 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-
-	// "os"
-
 	"time"
 
 	"github.com/distuurbia/firstTask/internal/handler"
@@ -60,15 +56,15 @@ func main() {
 	// const MongoDB = 2
 	// switch dbChoose {
 	// case PostgreSQL:
-		dbpool, err := ConnectPgx()
-		if err != nil {
-			log.Fatal("could not construct the pool: ", err)
-		}
-		defer dbpool.Close()
-		persPgx := repository.NewRepositoryPgx(dbpool)
-		persSrv := service.NewServicePerson(persPgx)
-		userSrv := service.NewServiceUser(persPgx)
-		handl = handler.NewHandler(persSrv, userSrv)
+	dbpool, err := ConnectPgx()
+	if err != nil {
+		log.Fatal("could not construct the pool: ", err)
+	}
+	defer dbpool.Close()
+	persPgx := repository.NewRepositoryPgx(dbpool)
+	persSrv := service.NewServicePerson(persPgx)
+	userSrv := service.NewServiceUser(persPgx)
+	handl = handler.NewHandler(persSrv, userSrv)
 	// case MongoDB:
 	// 	client, err := ConnectMongo()
 	// 	if err != nil {
@@ -89,15 +85,13 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.POST("/persondb", handl.Create, customMidleware.JWTAuth(os.Getenv("SECRET_KEY")))
-	e.GET("/persondb/:id", handl.ReadRow)
-	e.PUT("/persondb/:id", handl.Update)
-	e.DELETE("/persondb/:id", handl.Delete)
+	e.POST("/persondb", handl.Create, customMidleware.JWTMiddleware())
+	e.GET("/persondb/:id", handl.ReadRow, customMidleware.JWTMiddleware())
+	e.PUT("/persondb/:id", handl.Update, customMidleware.JWTMiddleware())
+	e.DELETE("/persondb/:id", handl.Delete, customMidleware.JWTMiddleware())
 
 	e.POST("/signIn", handl.SignIn)
 	e.POST("/login", handl.Login)
 	e.Logger.Fatal(e.Start(":8080"))
 
 }
-
-

@@ -94,7 +94,7 @@ func TestMain(m *testing.M) {
 		cleanupMongo()
 		os.Exit(1)
 	}
-	mongoRps = NewMongoRep(client)
+	rpsMongo = NewRpsMongo(client)
 	exitVal := m.Run()
 	cleanupPgx()
 	cleanupMongo()

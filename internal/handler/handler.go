@@ -21,7 +21,7 @@ type ServicePerson interface {
 
 type ServiceUser interface {
 	SignUp(ctx context.Context, user *model.User) (error)
-	Login(ctx context.Context, user *model.User)([]byte, []byte, error)
+	Login(ctx context.Context, user *model.User)(string, string, error)
 }
 
 // EntityHandler contains Service interface
@@ -134,7 +134,7 @@ func (handl *HandlerEntity) Login(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{
-		"access token": string(accessToken), 
-		"refresh token": string(refreshToken),
+		"access token": accessToken, 
+		"refresh token":refreshToken,
 	})
 }

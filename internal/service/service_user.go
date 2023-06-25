@@ -3,15 +3,16 @@ package service
 
 import (
 	"context"
+	"crypto/sha256"
 	"os"
 	"time"
 
 	// "crypto/sha256"
 	"fmt"
 
-	"github.com/distuurbia/firstTask/internal/middleware"
 	"github.com/distuurbia/firstTask/internal/model"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -33,48 +34,66 @@ func NewServiceUser(rpsUser RepositoryUser) *ServiceUser {
 	return &ServiceUser{rpsUser: rpsUser}
 }
 
+// Expiration time for an access and a refresh tokens
+const (
+	accessTokenExpiration  = 15 * time.Minute
+	refreshTokenExpiration = 72 * time.Hour
+)
+
+// TokenPair contains an Access and a refresh tokens
+type TokenPair struct {
+	AccessToken  string
+	RefreshToken string
+}
+
+type JWTCustomClaims struct {
+	ID  uuid.UUID `json:"id"`
+	jwt.RegisteredClaims
+}
+
 // SignIn is a method of UserService that calls  method of Repository
-func (userSrv *ServiceUser) SignUp(ctx context.Context, user *model.User) (error){
+func (srvUser *ServiceUser) SignUp(ctx context.Context, user *model.User) (error){
 	var err error
-	user.Password, err = userSrv.HashPassword(user.Password)
+	user.Password, err = srvUser.HashPassword(user.Password)
 	if err != nil {
-		return fmt.Errorf("UserService -> HashPassword -> error: %w", err)
+		return fmt.Errorf("ServiceUser -> HashPassword -> error: %w", err)
 	}
-	err = userSrv.rpsUser.SignUp(ctx, user)
+	err = srvUser.rpsUser.SignUp(ctx, user)
 	if err != nil {
-		return fmt.Errorf("UserService -> UserRepository -> SignIn -> error: %w", err)
+		return fmt.Errorf("ServiceUser -> UserRepository -> SignIn -> error: %w", err)
 	}
 	return nil
 }
 
 // Login is a method of UserService that calls method of Repository
-func (userSrv *ServiceUser) Login(ctx context.Context, user *model.User)([]byte, []byte, error){
-	hash, err := userSrv.rpsUser.GetPasswordByUsername(ctx, user)
+func (srvUser *ServiceUser) Login(ctx context.Context, user *model.User)(string, string, error){
+	hash, err := srvUser.rpsUser.GetPasswordByUsername(ctx, user)
 	if err != nil {
-		return []byte{}, []byte{}, fmt.Errorf("UserService -> UserRepository -> GetPasswordByUsernsame -> error: %w", err)
+		return "", "", fmt.Errorf("ServiceUser ->  Login -> RepositoryUser -> GetPasswordByUsernsame -> error: %w", err)
 	}
-	verified, err := userSrv.CheckPasswordHash(user.Password, hash)
+	verified, err := srvUser.CheckPasswordHash(hash, user.Password)
 	if err != nil || !verified {
-		return []byte{}, []byte{}, fmt.Errorf("UserService -> CheckPasswordHash -> error: %w", err)
+		return "", "", fmt.Errorf("ServiceUser ->  Login -> CheckPasswordHash -> error: %w", err)
 	}
-	refreshToken, err := userSrv.GetJWT(user, 72)
+	tokenPair, err := srvUser.GenerateTokenPair()
 	if err != nil {
-		return []byte{}, []byte{}, fmt.Errorf("UserService -> GetJWT -> error: %w", err)
+		return "", "", fmt.Errorf("ServiceUser ->  Login -> GenerateTokenPair -> error: %w", err)
 	}
-	user.RefreshToken = refreshToken
-	// user.RefreshToken = sha256.Sum256(refreshToken)
-	err = userSrv.rpsUser.AddRefreshToken(context.Background(), user)
+	sum := sha256.Sum256([]byte(tokenPair.RefreshToken))
+	hashedRefreshToken, err := srvUser.HashPassword(sum[:])
 	if err != nil {
-		return []byte{}, []byte{}, fmt.Errorf("UserService -> UserRepository -> AddRefreshToken -> error: %w", err)
+		return "", "", fmt.Errorf("ServiceUser -> Login -> HashPassword -> error: %w", err)
 	}
-	accessToken, err := userSrv.GetJWT(user, 0.5)
+	user.RefreshToken = string(hashedRefreshToken)
+
+	err = srvUser.rpsUser.AddRefreshToken(context.Background(), user)
 	if err != nil {
-		return []byte{}, []byte{}, fmt.Errorf("UserService -> GetJWT -> error: %w", err)
+		return "", "", fmt.Errorf("ServiceUsere ->  Login -> RepositoryUser -> AddRefreshToken -> error: %w", err)
 	}
-	return accessToken, refreshToken, nil
+	return tokenPair.AccessToken, user.RefreshToken, nil
 }
 
-func (userSrv *ServiceUser) HashPassword(password []byte) ([]byte, error) {
+func (srvUser *ServiceUser) HashPassword(password []byte) ([]byte, error) {
     bytes, err := bcrypt.GenerateFromPassword(password, 14)
 	if err != nil {
 		return bytes, fmt.Errorf("%w", err)
@@ -82,29 +101,42 @@ func (userSrv *ServiceUser) HashPassword(password []byte) ([]byte, error) {
     return bytes, nil
 }
 
-func (userSrv *ServiceUser) CheckPasswordHash(password, hash []byte) (bool, error) {
+func (srvUser *ServiceUser) CheckPasswordHash(hash, password []byte) (bool, error) {
     err := bcrypt.CompareHashAndPassword(hash, password)
 	if err != nil{
 		return false, fmt.Errorf("%w", err)
 	}
-    return true, err
+    return true, nil
 } 
 
-//
-func (userSrv *ServiceUser) GetJWT(user *model.User, expTime float64) ([]byte, error) {
-	claims := &middleware.JWTCustomClaims{
-		ID: user.ID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * time.Duration(expTime))),
-		},
+func (srvUser *ServiceUser) GenerateTokenPair() (TokenPair, error) {
+	accessToken, err := srvUser.GenerateJWTToken(accessTokenExpiration)
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("ServiceUser -> GenerateTokenPair -> accessToken -> GenerateJWTToken -> error: %w", err)
+	}
+
+	refreshToken, err := srvUser.GenerateJWTToken(refreshTokenExpiration)
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("ServiceUser -> GenerateTokenPair -> refreshToken -> GenerateJWTToken -> error: %w", err)
+	}
+
+	return TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
+func (srvUser *ServiceUser) GenerateJWTToken(expiration time.Duration) (string, error) {
+	claims := &jwt.MapClaims{
+		"exp": time.Now().Add(expiration).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	signedToken, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
-		return []byte{}, fmt.Errorf("%w", err)
+		return "", fmt.Errorf("ServiceUser -> GenerateJWTToken -> token.SignedString -> error: %w", err)
 	}
-	return []byte(signedToken), nil
+
+	return tokenString, nil
 }
 
 

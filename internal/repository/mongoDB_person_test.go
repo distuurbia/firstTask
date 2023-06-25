@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var mongoRps *PersonMongo
+var rpsMongo *RepositoryMongo
 
 var mongoVladimir = model.Person{
 	ID:         uuid.New(),
@@ -23,9 +23,9 @@ var mongoVladimir = model.Person{
 }
 
 func Test_MongoCreate(t *testing.T) {
-	err := mongoRps.Create(context.Background(), &mongoVladimir)
+	err := rpsMongo.Create(context.Background(), &mongoVladimir)
 	require.NoError(t, err)
-	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
+	testMongoVladimir, err := rpsMongo.ReadRow(context.Background(), mongoVladimir.ID)
 	require.NoError(t, err)
 	require.Equal(t, mongoVladimir.ID, testMongoVladimir.ID)
 	require.Equal(t, mongoVladimir.Salary, testMongoVladimir.Salary)
@@ -34,12 +34,12 @@ func Test_MongoCreate(t *testing.T) {
 }
 
 func Test_MongoCreateNil(t *testing.T) {
-	err := mongoRps.Create(context.Background(), nil)
+	err := rpsMongo.Create(context.Background(), nil)
 	require.True(t, errors.Is(err, ErrNil))
 }
 
 func Test_MongoCreateDuplicate(t *testing.T) {
-	err := mongoRps.Create(context.Background(), &mongoVladimir)
+	err := rpsMongo.Create(context.Background(), &mongoVladimir)
 	require.Error(t, err)
 }
 
@@ -47,12 +47,12 @@ func Test_MongoCreateContextTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	time.Sleep(1 * time.Second)
 	defer cancel()
-	err := mongoRps.Create(ctx, &mongoVladimir)
+	err := rpsMongo.Create(ctx, &mongoVladimir)
 	require.True(t, errors.Is(err, context.DeadlineExceeded))
 }
 
 func Test_MongoReadRow(t *testing.T) {
-	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
+	testMongoVladimir, err := rpsMongo.ReadRow(context.Background(), mongoVladimir.ID)
 	require.NoError(t, err)
 	require.Equal(t, mongoVladimir.ID, testMongoVladimir.ID)
 	require.Equal(t, mongoVladimir.Salary, testMongoVladimir.Salary)
@@ -62,7 +62,7 @@ func Test_MongoReadRow(t *testing.T) {
 
 func Test_MongoReadRowNotFound(t *testing.T) {
 	var id uuid.UUID
-	_, err := mongoRps.ReadRow(context.Background(), id)
+	_, err := rpsMongo.ReadRow(context.Background(), id)
 	require.True(t, errors.Is(err, mongo.ErrNoDocuments))
 }
 
@@ -70,14 +70,14 @@ func Test_MongoReadRowContextTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	time.Sleep(1 * time.Second)
 	defer cancel()
-	_, err := mongoRps.ReadRow(ctx, mongoVladimir.ID)
+	_, err := rpsMongo.ReadRow(ctx, mongoVladimir.ID)
 	require.True(t, errors.Is(err, context.DeadlineExceeded))
 }
 
 func Test_MongoGetAll(t *testing.T) {
-	allPers, err := mongoRps.GetAll(context.Background())
+	allPers, err := rpsMongo.GetAll(context.Background())
 	require.NoError(t, err)
-	coll := mongoRps.client.Database("personMongoDB").Collection("persons")
+	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{}
 	numberPersons, err := coll.CountDocuments(context.Background(), filter)
 	require.NoError(t, err)
@@ -88,9 +88,9 @@ func Test_MongoUpdate(t *testing.T) {
 	mongoVladimir.Salary = 100
 	mongoVladimir.Married = false
 	mongoVladimir.Profession = "Security"
-	err := mongoRps.Update(context.Background(), &mongoVladimir)
+	err := rpsMongo.Update(context.Background(), &mongoVladimir)
 	require.NoError(t, err)
-	testMongoVladimir, err := mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
+	testMongoVladimir, err := rpsMongo.ReadRow(context.Background(), mongoVladimir.ID)
 	require.NoError(t, err)
 	require.Equal(t, mongoVladimir.ID, testMongoVladimir.ID)
 	require.Equal(t, mongoVladimir.Salary, testMongoVladimir.Salary)
@@ -100,7 +100,7 @@ func Test_MongoUpdate(t *testing.T) {
 
 func Test_MongoUpdateNotFound(t *testing.T) {
 	var emptyEntity model.Person
-	err := mongoRps.Update(context.Background(), &emptyEntity)
+	err := rpsMongo.Update(context.Background(), &emptyEntity)
 	require.True(t, errors.Is(err, mongo.ErrNoDocuments))
 }
 
@@ -108,20 +108,20 @@ func Test_MongoUpdateContextTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	time.Sleep(1 * time.Second)
 	defer cancel()
-	err := mongoRps.Update(ctx, &mongoVladimir)
+	err := rpsMongo.Update(ctx, &mongoVladimir)
 	require.True(t, errors.Is(err, context.DeadlineExceeded))
 }
 
 func Test_MongoDelete(t *testing.T) {
-	err := mongoRps.Delete(context.Background(), mongoVladimir.ID)
+	err := rpsMongo.Delete(context.Background(), mongoVladimir.ID)
 	require.NoError(t, err)
-	_, err = mongoRps.ReadRow(context.Background(), mongoVladimir.ID)
+	_, err = rpsMongo.ReadRow(context.Background(), mongoVladimir.ID)
 	require.True(t, errors.Is(err, mongo.ErrNoDocuments))
 }
 
 func Test_MongoDeleteNotFound(t *testing.T) {
 	var id uuid.UUID
-	err := mongoRps.Delete(context.Background(), id)
+	err := rpsMongo.Delete(context.Background(), id)
 	require.True(t, errors.Is(err, mongo.ErrNoDocuments))
 }
 
@@ -129,6 +129,6 @@ func Test_MongoDeleteontextTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	time.Sleep(1 * time.Second)
 	defer cancel()
-	err := mongoRps.Delete(ctx, mongoVladimir.ID)
+	err := rpsMongo.Delete(ctx, mongoVladimir.ID)
 	require.True(t, errors.Is(err, context.DeadlineExceeded))
 }

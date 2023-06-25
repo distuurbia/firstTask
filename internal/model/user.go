@@ -8,5 +8,5 @@ type User struct {
 	ID           uuid.UUID `json:"ID" bson:"_id"`
 	Username     string
 	Password     []byte
-	RefreshToken []byte
+	RefreshToken string
 }
