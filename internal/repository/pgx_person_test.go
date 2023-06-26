@@ -18,7 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var rps *RepositoryPgx
+var rps *Pgx
 
 var pgxVladimir = model.Person{
 	ID:         uuid.New(),
@@ -94,7 +94,7 @@ func TestMain(m *testing.M) {
 		cleanupMongo()
 		os.Exit(1)
 	}
-	rpsMongo = NewRpsMongo(client)
+	rpsMongo = NewRepositoryMongo(client)
 	exitVal := m.Run()
 	cleanupPgx()
 	cleanupMongo()

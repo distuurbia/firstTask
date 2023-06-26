@@ -6,7 +6,7 @@ import "github.com/google/uuid"
 // User contains an info about the user and will be written in a users table
 type User struct {
 	ID           uuid.UUID `json:"ID" bson:"_id"`
-	Username     string
-	Password     []byte
-	RefreshToken string
+	Username     string    `json:"username" bson:"username"`
+	Password     []byte    `json:"password" bson:"password"`
+	RefreshToken string    `json:"refreshToken" bson:"refreshToken"`
 }

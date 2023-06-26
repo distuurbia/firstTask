@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
+	"github.com/distuurbia/firstTask/internal/config"
 	"github.com/distuurbia/firstTask/internal/handler"
 	customMidleware "github.com/distuurbia/firstTask/internal/middleware"
 	"github.com/distuurbia/firstTask/internal/repository"
@@ -20,7 +22,7 @@ import (
 
 // ConnectPgx connects to the pgxpool
 func ConnectPgx() (*pgxpool.Pool, error) {
-	cfg, err := pgxpool.ParseConfig("postgres://personuser:minovich12@localhost:5432/persondb")
+	cfg, err := pgxpool.ParseConfig(config.PgxConnectionString)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,7 @@ func ConnectMongo() (*mongo.Client, error) {
 	const ctxTimeout = 10
 	ctx, cancel := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://personUserMongoDB:minovich12@localhost:27017"))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoConnectionString))
 	if err != nil {
 		return client, fmt.Errorf("%w", err)
 	}
@@ -45,43 +47,44 @@ func ConnectMongo() (*mongo.Client, error) {
 
 // main is an executable function
 func main() {
-	var handl *handler.HandlerEntity
+	var handl *handler.EntityHandler
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
-	// var dbChoose int
-	// _, err := fmt.Scan(&dbChoose)
-	// if err != nil {
-	// 	fmt.Println("failed to scan")
-	// }
-	// const PostgreSQL = 1
-	// const MongoDB = 2
-	// switch dbChoose {
-	// case PostgreSQL:
-	dbpool, err := ConnectPgx()
+	var dbChoose int
+	_, err := fmt.Scan(&dbChoose)
 	if err != nil {
-		log.Fatal("could not construct the pool: ", err)
+		fmt.Println("failed to scan")
 	}
-	defer dbpool.Close()
-	persPgx := repository.NewRepositoryPgx(dbpool)
-	persSrv := service.NewServicePerson(persPgx)
-	userSrv := service.NewServiceUser(persPgx)
-	handl = handler.NewHandler(persSrv, userSrv)
-	// case MongoDB:
-	// 	client, err := ConnectMongo()
-	// 	if err != nil {
-	// 		fmt.Println("could not construct the client: ", err)
-	// 	}
-	// 	persMongo := repository.NewMongoRep(client)
-	// 	srv := service.NewService(persMongo)
-	// 	handl = handler.NewHandler(srv)
-	// 	defer func() {
-	// 		if err = client.Disconnect(context.Background()); err != nil {
-	// 			log.Fatal("%w", err)
-	// 		}
-	// 	}()
-	// default:
-	// 	fmt.Println("The wrong number!")
-	// 	defer os.Exit(1)
-	// }
+	const PostgreSQL = 1
+	const MongoDB = 2
+	switch dbChoose {
+	case PostgreSQL:
+		dbpool, err := ConnectPgx()
+		if err != nil {
+			log.Fatal("could not construct the pool: ", err)
+		}
+		defer dbpool.Close()
+		persPgx := repository.NewRepositoryPgx(dbpool)
+		persSrv := service.NewPersonService(persPgx)
+		userSrv := service.NewUserService(persPgx)
+		handl = handler.NewHandler(persSrv, userSrv)
+	case MongoDB:
+		client, err := ConnectMongo()
+		if err != nil {
+			fmt.Println("could not construct the client: ", err)
+		}
+		rpsMongo := repository.NewRepositoryMongo(client)
+		srvPers := service.NewPersonService(rpsMongo)
+		srvUser := service.NewUserService(rpsMongo)
+		handl = handler.NewHandler(srvPers, srvUser)
+		defer func() {
+			if err = client.Disconnect(context.Background()); err != nil {
+				log.Fatal("%w", err)
+			}
+		}()
+	default:
+		fmt.Println("The wrong number!")
+		defer os.Exit(1)
+	}
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -92,6 +95,6 @@ func main() {
 
 	e.POST("/signIn", handl.SignIn)
 	e.POST("/login", handl.Login)
+	e.POST("/refresh", handl.Refresh)
 	e.Logger.Fatal(e.Start(":8080"))
-
 }

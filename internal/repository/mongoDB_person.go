@@ -11,18 +11,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// RepositoryMongocontains object of type *mongo.Client
-type RepositoryMongo struct {
+// Mongo contains object of type *mongo.Client
+type Mongo struct {
 	client *mongo.Client
 }
 
-// NewMongoRep accepts object of type *mongo.Client and returns an object of type *PersonMongo
-func NewRpsMongo(client *mongo.Client) *RepositoryMongo {
-	return &RepositoryMongo{client: client}
+// NewRepositoryMongo accepts object of type *mongo.Client and returns an object of type *PersonMongo
+func NewRepositoryMongo(client *mongo.Client) *Mongo {
+	return &Mongo{client: client}
 }
 
 // Create creates document in mongoDB collection
-func (rpsMongo *RepositoryMongo) Create(ctx context.Context, pers *model.Person) error {
+func (rpsMongo *Mongo) Create(ctx context.Context, pers *model.Person) error {
 	if pers == nil {
 		return ErrNil
 	}
@@ -35,7 +35,7 @@ func (rpsMongo *RepositoryMongo) Create(ctx context.Context, pers *model.Person)
 }
 
 // ReadRow reads document from mongoDB collection
-func (rpsMongo *RepositoryMongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
+func (rpsMongo *Mongo) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": id}
 	var pers model.Person
@@ -47,7 +47,7 @@ func (rpsMongo *RepositoryMongo) ReadRow(ctx context.Context, id uuid.UUID) (*mo
 }
 
 // GetAll reads all documents from mongoDB collection
-func (rpsMongo *RepositoryMongo) GetAll(ctx context.Context) ([]model.Person, error) {
+func (rpsMongo *Mongo) GetAll(ctx context.Context) ([]model.Person, error) {
 	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{}
 	var allPers []model.Person
@@ -68,7 +68,7 @@ func (rpsMongo *RepositoryMongo) GetAll(ctx context.Context) ([]model.Person, er
 }
 
 // Update update the document of mongoDB collection
-func (rpsMongo *RepositoryMongo) Update(ctx context.Context, pers *model.Person) error {
+func (rpsMongo *Mongo) Update(ctx context.Context, pers *model.Person) error {
 	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": pers.ID}
 	update := bson.M{"$set": pers}
@@ -83,7 +83,7 @@ func (rpsMongo *RepositoryMongo) Update(ctx context.Context, pers *model.Person)
 }
 
 // Delete deletes the document of mongoDB collection
-func (rpsMongo *RepositoryMongo) Delete(ctx context.Context, id uuid.UUID) error {
+func (rpsMongo *Mongo) Delete(ctx context.Context, id uuid.UUID) error {
 	coll := rpsMongo.client.Database("personMongoDB").Collection("persons")
 	filter := bson.M{"_id": id}
 	res, err := coll.DeleteOne(ctx, filter)

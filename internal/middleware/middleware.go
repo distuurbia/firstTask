@@ -1,17 +1,18 @@
+// Package middleware need fop an authorization in our requests
 package middleware
 
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
+	"time"
 
+	"github.com/distuurbia/firstTask/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
-var secretKey = os.Getenv("SECRET_KEY")
-
+// JWTMiddleware makes an authorization through access token
 func JWTMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -25,27 +26,35 @@ func JWTMiddleware() echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
 			}
 
-			token, err := validateToken(tokenString, secretKey)
+			token, err := ValidateToken(tokenString, config.SecretKey)
 			if err != nil || !token.Valid {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
+			}
+			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+				exp := claims["exp"].(float64)
+				if exp < float64(time.Now().Unix()) {
+					return echo.NewHTTPError(http.StatusUnauthorized, "Token is expired")
+				}
 			}
 			return next(c)
 		}
 	}
 }
 
+// extractTokenFromHeader extractes token from authHeader
 func extractTokenFromHeader(authHeader string) string {
 	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+	if len(parts) != 2 || !strings.EqualFold(strings.ToLower(parts[0]), "bearer") {
 		return ""
 	}
 	return parts[1]
 }
 
-func validateToken(tokenString, secretKey string) (*jwt.Token, error) {
+// ValidateToken parses tokenString and checks if signing method is ok and return jwt token with filled Valid field
+func ValidateToken(tokenString, secretKey string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(secretKey), nil
 	})

@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 func TestCreate(t *testing.T) {
 	srvc.On("Create", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
 
-	handl := service.NewServicePerson(srvc)
+	handl := service.NewPersonService(srvc)
 	err := handl.Create(context.Background(), &vladimir)
 	assert.NoError(t, err)
 
@@ -46,7 +46,7 @@ func TestCreate(t *testing.T) {
 // TestReadRow is a mocktest for ReadRow method of interface Service
 func TestReadRow(t *testing.T) {
 	srvc.On("ReadRow", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(&vladimir, nil)
-	handle := service.NewServicePerson(srvc)
+	handle := service.NewPersonService(srvc)
 	testVladimir, err := handle.ReadRow(context.Background(), vladimir.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, testVladimir.ID, vladimir.ID)
@@ -58,7 +58,7 @@ func TestReadRow(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	srvc.On("GetAll", mock.Anything).Return([]model.Person{vladimir}, nil)
-	handle := service.NewServicePerson(srvc)
+	handle := service.NewPersonService(srvc)
 	allPers, err := handle.GetAll(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(t, len(allPers), len([]model.Person{vladimir}))
@@ -70,7 +70,7 @@ func TestUpdate(t *testing.T) {
 	vladimir.Salary = 700
 	vladimir.Married = false
 	vladimir.Profession = "Lawer"
-	handle := service.NewServicePerson(srvc)
+	handle := service.NewPersonService(srvc)
 	err := handle.Update(context.Background(), &vladimir)
 	assert.NoError(t, err)
 	testVladimir, err := handle.ReadRow(context.Background(), vladimir.ID)
@@ -86,7 +86,7 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	srvc.On("Delete", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(nil)
 
-	handle := service.NewServicePerson(srvc)
+	handle := service.NewPersonService(srvc)
 	err := handle.Delete(context.Background(), vladimir.ID)
 	assert.NoError(t, err)
 

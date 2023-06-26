@@ -20,10 +20,16 @@ curl -X DELETE http://localhost:8080/persondb/09277794-cd9d-46d3-a4b7-06458c7c63
 ###
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -d {'"Username":"oleg", "Password":"minovich12"'} \
+  -d {'"username":"oleg", "password":"minovich12"'} \
   http://localhost:8080/signIn
 ###
 curl -X POST  \
   -H 'Content-Type: application/json' \
-  -d {'"Username":"oleg", "Password":"minovich12"'} \
+  -d {'"username":"oleg", "password":"minovich12"'} \
   http://localhost:8080/login
+
+###
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d {'"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc3ODk0MDYsImlkIjoiZGE5ZDAxZjktZTE3My00MDI1LWE4OTYtZDgxMTJmNWUxMzczIn0.ljKzgqcx03GVVIX9I-WisjSqgrPgi6BRTccCquoAwMk", "refreshToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgwNDc3MDYsImlkIjoiZGE5ZDAxZjktZTE3My00MDI1LWE4OTYtZDgxMTJmNWUxMzczIn0.lTIZ6YRamJmEDq-DIp520JiCp3HjBMELVFgfAWkh6J4"'} \
+  http://localhost:8080/refresh

@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var rpsMongo *RepositoryMongo
+var rpsMongo *Mongo
 
 var mongoVladimir = model.Person{
 	ID:         uuid.New(),
