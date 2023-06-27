@@ -5,7 +5,8 @@ curl -H 'Content-Type: application/json' \
   -d '{"salary":100, "married":true, "profession":"football player"}' \
   http://localhost:8080/persondb 
 ###
-curl http://localhost:8080/persondb/09277794-cd9d-46d3-a4b7-06458c7c63a5
+curl http://localhost:8080/persondb/ebd74a3d-2dc3-4642-aa2e-384499a98d1c \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc4Nzk4MzgsImlkIjoiOTk0NjIxZjAtNTQ4Ni00OTY3LWI3ZmMtYjQ4OTU5ZWMxMzNmIn0.DD0jGRqQeCMeQyL4U_7SpdtrXYxajkXLNbMFh66JMG4"
 
 ###
 curl -X PUT \
@@ -20,12 +21,12 @@ curl -X DELETE http://localhost:8080/persondb/09277794-cd9d-46d3-a4b7-06458c7c63
 ###
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -d {'"username":"oleg", "password":"minovich12"'} \
-  http://localhost:8080/signIn
+  -d {'"username":"Jake", "password":"minovich12"'} \
+  http://localhost:8080/signUp
 ###
 curl -X POST  \
   -H 'Content-Type: application/json' \
-  -d {'"username":"oleg", "password":"minovich12"'} \
+  -d {'"username":"Jake", "password":"minovich12"'} \
   http://localhost:8080/login
 
 ###

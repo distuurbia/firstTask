@@ -14,12 +14,12 @@ func (rpsPgx *Pgx) SignUp(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return ErrNil
 	}
-	var numberPersons int
-	err := rpsPgx.db.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = $1", user.Username).Scan(&numberPersons)
+	var numberUsers int
+	err := rpsPgx.db.QueryRow(context.Background(), "SELECT COUNT(*) FROM users WHERE username = $1", user.Username).Scan(&numberUsers)
 	if err != nil {
 		return fmt.Errorf("Pgx -> SignUp -> QueryRow -> error: %w", err)
 	}
-	if numberPersons != 0 {
+	if numberUsers != 0 {
 		return ErrExist
 	}
 	_, err = rpsPgx.db.Exec(ctx, "INSERT INTO users(id, username, password) VALUES($1, $2, $3)", user.ID, user.Username, user.Password)

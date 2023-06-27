@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/distuurbia/firstTask/internal/config"
@@ -13,20 +12,26 @@ import (
 	customMidleware "github.com/distuurbia/firstTask/internal/middleware"
 	"github.com/distuurbia/firstTask/internal/repository"
 	"github.com/distuurbia/firstTask/internal/service"
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/caarlos0/env/v8"
 )
 
 // ConnectPgx connects to the pgxpool
 func ConnectPgx() (*pgxpool.Pool, error) {
-	cfg, err := pgxpool.ParseConfig(config.PgxConnectionString)
+	var cfg config.Config
+	if err := env.Parse(&cfg); err != nil {
+		return nil, err
+	}
+	cfgPgx, err := pgxpool.ParseConfig(cfg.PgxConnectionString)
 	if err != nil {
 		return nil, err
 	}
-	dbpool, err := pgxpool.NewWithConfig(context.Background(), cfg)
+	dbpool, err := pgxpool.NewWithConfig(context.Background(), cfgPgx)
 	if err != nil {
 		return nil, err
 	}
@@ -35,10 +40,14 @@ func ConnectPgx() (*pgxpool.Pool, error) {
 
 // ConnectMongo connects to the mongoDB
 func ConnectMongo() (*mongo.Client, error) {
+	var cfg config.Config
+	if err := env.Parse(&cfg); err != nil {
+		return nil, err
+	}
 	const ctxTimeout = 10
 	ctx, cancel := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoConnectionString))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoConnectionString))
 	if err != nil {
 		return client, fmt.Errorf("%w", err)
 	}
@@ -48,6 +57,7 @@ func ConnectMongo() (*mongo.Client, error) {
 // main is an executable function
 func main() {
 	var handl *handler.EntityHandler
+	validate := validator.New()
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
 	var dbChoose int
 	_, err := fmt.Scan(&dbChoose)
@@ -66,24 +76,24 @@ func main() {
 		persPgx := repository.NewRepositoryPgx(dbpool)
 		persSrv := service.NewPersonService(persPgx)
 		userSrv := service.NewUserService(persPgx)
-		handl = handler.NewHandler(persSrv, userSrv)
+		handl = handler.NewHandler(persSrv, userSrv, validate)
 	case MongoDB:
 		client, err := ConnectMongo()
 		if err != nil {
-			fmt.Println("could not construct the client: ", err)
+			log.Fatal("could not construct the client: ", err)
 		}
 		rpsMongo := repository.NewRepositoryMongo(client)
 		srvPers := service.NewPersonService(rpsMongo)
 		srvUser := service.NewUserService(rpsMongo)
-		handl = handler.NewHandler(srvPers, srvUser)
+		handl = handler.NewHandler(srvPers, srvUser, validate)
 		defer func() {
 			if err = client.Disconnect(context.Background()); err != nil {
-				log.Fatal("%w", err)
+				log.Fatal("could not disconnect ", err)
 			}
 		}()
 	default:
-		fmt.Println("The wrong number!")
-		defer os.Exit(1)
+		//nolint:gocritic
+		log.Fatal("The wrong number!")
 	}
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -93,7 +103,7 @@ func main() {
 	e.PUT("/persondb/:id", handl.Update, customMidleware.JWTMiddleware())
 	e.DELETE("/persondb/:id", handl.Delete, customMidleware.JWTMiddleware())
 
-	e.POST("/signIn", handl.SignIn)
+	e.POST("/signUp", handl.SignUp)
 	e.POST("/login", handl.Login)
 	e.POST("/refresh", handl.Refresh)
 	e.Logger.Fatal(e.Start(":8080"))

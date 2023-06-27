@@ -7,8 +7,10 @@ import (
 
 	"github.com/distuurbia/firstTask/internal/model"
 	"github.com/distuurbia/firstTask/internal/service"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 )
 
 // PersonService is an interface that contains CRUD methods and GetAll of the service
@@ -31,11 +33,12 @@ type UserService interface {
 type EntityHandler struct {
 	srvcPers PersonService
 	srvcUser UserService
+	validate *validator.Validate
 }
 
 // NewHandler accepts Service interface and returns an object of *HandlerEntity
-func NewHandler(srvcPers PersonService, srvcUser UserService) *EntityHandler {
-	return &EntityHandler{srvcPers: srvcPers, srvcUser: srvcUser}
+func NewHandler(srvcPers PersonService, srvcUser UserService, validate *validator.Validate) *EntityHandler {
+	return &EntityHandler{srvcPers: srvcPers, srvcUser: srvcUser, validate: validate}
 }
 
 // Create calls Create method of Service by handler
@@ -44,10 +47,17 @@ func (handl *EntityHandler) Create(c echo.Context) error {
 	createdPerson.ID = uuid.New()
 	err := c.Bind(&createdPerson)
 	if err != nil {
-		return err
+		logrus.Errorf("EntityHandler -> Create -> c.Bind -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind")
+	}
+	err = handl.validate.StructCtx(c.Request().Context(), createdPerson)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> Create -> validate -> StructCtx -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to validate")
 	}
 	err = handl.srvcPers.Create(c.Request().Context(), &createdPerson)
 	if err != nil {
+		logrus.Errorf("EntityHandler -> Create -> srvcPers.Create -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to create check if id is UUID format")
 	}
 	return c.JSON(http.StatusCreated, createdPerson)
@@ -55,9 +65,15 @@ func (handl *EntityHandler) Create(c echo.Context) error {
 
 // ReadRow calls ReadRow method of Service by handler
 func (handl *EntityHandler) ReadRow(c echo.Context) error {
-	id := uuid.MustParse(c.Param("id"))
-	readPerson, err := handl.srvcPers.ReadRow(c.Request().Context(), id)
+	id := c.Param("id")
+	err := handl.validate.VarCtx(c.Request().Context(), id, "required,uuid")
 	if err != nil {
+		logrus.Errorf("EntityHandler -> ReadRow -> validate -> VarCtx -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to valid id")
+	}
+	readPerson, err := handl.srvcPers.ReadRow(c.Request().Context(), uuid.MustParse(id))
+	if err != nil {
+		logrus.Errorf("EntityHandler -> ReadRow -> srvcPers.ReadRow -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to read check if id is UUID format or that such person exist")
 	}
 	return c.JSON(http.StatusOK, readPerson)
@@ -67,6 +83,7 @@ func (handl *EntityHandler) ReadRow(c echo.Context) error {
 func (handl *EntityHandler) GetAll(c echo.Context) error {
 	persAll, err := handl.srvcPers.GetAll(c.Request().Context())
 	if err != nil {
+		logrus.Errorf("EntityHandler -> GetAll -> srvcPers.GetAll -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to get all persons")
 	}
 	return c.JSON(http.StatusOK, persAll)
@@ -75,13 +92,26 @@ func (handl *EntityHandler) GetAll(c echo.Context) error {
 // Update calls Update method of Service by handler
 func (handl *EntityHandler) Update(c echo.Context) error {
 	var updatedPerson model.Person
-	updatedPerson.ID = uuid.MustParse(c.Param("id"))
-	err := c.Bind(&updatedPerson)
+	id := c.Param("id")
+	err := handl.validate.VarCtx(c.Request().Context(), id, "required,uuid")
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind info in person")
+		logrus.Errorf("EntityHandler -> Update -> validate -> VarCtx -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to valid id")
+	}
+	updatedPerson.ID = uuid.MustParse(id)
+	err = c.Bind(&updatedPerson)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> Update -> c.Bind -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind")
+	}
+	err = handl.validate.StructCtx(c.Request().Context(), updatedPerson)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> Update -> validate -> StructCtx -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to validate")
 	}
 	err = handl.srvcPers.Update(c.Request().Context(), &updatedPerson)
 	if err != nil {
+		logrus.Errorf("EntityHandler -> Update -> srvcPers.Update -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to update check if id is UUID format or that such person exist")
 	}
 	return c.JSON(http.StatusOK, updatedPerson)
@@ -89,33 +119,46 @@ func (handl *EntityHandler) Update(c echo.Context) error {
 
 // Delete calls Delete method of Service by handler
 func (handl *EntityHandler) Delete(c echo.Context) error {
-	id := uuid.MustParse(c.Param("id"))
-	err := handl.srvcPers.Delete(c.Request().Context(), id)
+	id := c.Param("id")
+	err := handl.validate.VarCtx(c.Request().Context(), id, "required,uuid")
 	if err != nil {
+		logrus.Errorf("EntityHandler -> Update -> validate -> VarCtx -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to valid id")
+	}
+	err = handl.srvcPers.Delete(c.Request().Context(), uuid.MustParse(id))
+	if err != nil {
+		logrus.Errorf("EntityHandler -> Delete -> srvcPers.Delete -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "falled to delete check if id is UUID format or that such person exist")
 	}
 	return c.NoContent(http.StatusNoContent)
 }
 
-// SignIn calls SignIn method of Service by handler
-func (handl *EntityHandler) SignIn(c echo.Context) error {
+// SignUp calls SignIn method of Service by handler
+func (handl *EntityHandler) SignUp(c echo.Context) error {
 	bindInfo := struct {
-		Name string `json:"username"`
-		Pass string `json:"password"`
+		Username string `json:"username" validate:"required,min=4,max=15"`
+		Password string `json:"password"`
 	}{}
 	err := c.Bind(&bindInfo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind info")
+		logrus.Errorf("EntityHandler -> SignUp -> c.Bind -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind")
 	}
 	var createdUser model.User
 	createdUser.ID = uuid.New()
-	createdUser.Username = bindInfo.Name
-	createdUser.Password = []byte(bindInfo.Pass)
+	createdUser.Username = bindInfo.Username
+	createdUser.Password = []byte(bindInfo.Password)
+	err = handl.validate.StructCtx(c.Request().Context(), createdUser)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> SignUp -> validate.Struct -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to validate")
+	}
 	err = handl.srvcUser.SignUp(c.Request().Context(), &createdUser)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "failed to signIn")
+		logrus.Errorf("EntityHandler -> SignUp -> srvcUser.SignUp -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to signUp")
 	}
-	return c.JSON(http.StatusCreated, "ID: "+createdUser.ID.String()+"Username: "+createdUser.Username)
+	return c.JSON(http.StatusCreated, "ID: "+createdUser.ID.String())
 }
 
 // Login calls Login method of Service by handler
@@ -126,16 +169,22 @@ func (handl *EntityHandler) Login(c echo.Context) error {
 	}{}
 	err := c.Bind(&bindInfo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind info")
+		logrus.Errorf("EntityHandler -> Login -> c.Bind -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind", err)
 	}
 	var loginedUser model.User
 	loginedUser.Username = bindInfo.Username
 	loginedUser.Password = []byte(bindInfo.Password)
+	err = handl.validate.StructCtx(c.Request().Context(), loginedUser)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> SignUp -> validate.Struct -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to validate")
+	}
 	tokenPair, err := handl.srvcUser.Login(c.Request().Context(), &loginedUser)
 	if err != nil {
+		logrus.Errorf("EntityHandler -> Login -> srvcUser.Login -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to login")
 	}
-
 	return c.JSON(http.StatusOK, echo.Map{
 		"access token":  tokenPair.AccessToken,
 		"refresh token": tokenPair.RefreshToken,
@@ -150,13 +199,15 @@ func (handl *EntityHandler) Refresh(c echo.Context) error {
 	}{}
 	err := c.Bind(&bindInfo)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind info")
+		logrus.Errorf("EntityHandler -> Refresh -> c.Bind -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to bind")
 	}
 	var tokenPair service.TokenPair
 	tokenPair.AccessToken = bindInfo.AccessToken
 	tokenPair.RefreshToken = bindInfo.RefreshToken
 	tokenPair, err = handl.srvcUser.Refresh(c.Request().Context(), tokenPair)
 	if err != nil {
+		logrus.Errorf("EntityHandler -> Refresh -> srvcUser.Refresh -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to refresh")
 	}
 	return c.JSON(http.StatusOK, echo.Map{

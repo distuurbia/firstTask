@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/caarlos0/env/v8"
 	"github.com/distuurbia/firstTask/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
@@ -25,8 +26,11 @@ func JWTMiddleware() echo.MiddlewareFunc {
 			if tokenString == "" {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
 			}
-
-			token, err := ValidateToken(tokenString, config.SecretKey)
+			var cfg config.Config
+			if err := env.Parse(&cfg); err != nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid env")
+			}
+			token, err := ValidateToken(tokenString, cfg.SecretKey)
 			if err != nil || !token.Valid {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
 			}

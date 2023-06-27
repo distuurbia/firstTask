@@ -8,6 +8,7 @@ import (
 
 	"fmt"
 
+	"github.com/caarlos0/env/v8"
 	"github.com/distuurbia/firstTask/internal/config"
 	"github.com/distuurbia/firstTask/internal/middleware"
 	"github.com/distuurbia/firstTask/internal/model"
@@ -91,7 +92,11 @@ func (srvUser *UserService) Login(ctx context.Context, user *model.User) (TokenP
 
 // Refresh is a method of ServiceUser that refeshes access token and refresh token
 func (srvUser *UserService) Refresh(ctx context.Context, tokenPair TokenPair) (TokenPair, error) {
-	accessToken, err := middleware.ValidateToken(tokenPair.AccessToken, config.SecretKey)
+	var cfg config.Config
+	if err := env.Parse(&cfg); err != nil {
+		return TokenPair{}, err
+	}
+	accessToken, err := middleware.ValidateToken(tokenPair.AccessToken, cfg.SecretKey)
 	if err != nil {
 		return TokenPair{}, fmt.Errorf("ServiceUser -> Refresh -> accessToken -> middleware -> ValidateToken")
 	}
@@ -99,7 +104,7 @@ func (srvUser *UserService) Refresh(ctx context.Context, tokenPair TokenPair) (T
 	if claims, ok := accessToken.Claims.(jwt.MapClaims); ok && accessToken.Valid {
 		accessID = uuid.MustParse(claims["id"].(string))
 	}
-	refreshToken, err := middleware.ValidateToken(tokenPair.RefreshToken, config.SecretKey)
+	refreshToken, err := middleware.ValidateToken(tokenPair.RefreshToken, cfg.SecretKey)
 	if err != nil {
 		return TokenPair{}, fmt.Errorf("ServiceUser -> Refresh -> refreshToken -> middleware -> ValidateToken")
 	}
@@ -178,15 +183,18 @@ func (srvUser *UserService) GenerateTokenPair(id uuid.UUID) (TokenPair, error) {
 
 // GenerateJWTToken is a method of ServiceUser that generate JWT token with given expiration with user id
 func (srvUser *UserService) GenerateJWTToken(expiration time.Duration, id uuid.UUID) (string, error) {
+	var cfg config.Config
+	if err := env.Parse(&cfg); err != nil {
+		return "", err
+	}
 	claims := &jwt.MapClaims{
 		"exp": time.Now().Add(expiration).Unix(),
 		"id":  id,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(config.SecretKey))
+	tokenString, err := token.SignedString([]byte(cfg.SecretKey))
 	if err != nil {
 		return "", fmt.Errorf("ServiceUser -> GenerateJWTToken -> token.SignedString -> error: %w", err)
 	}
-
 	return tokenString, nil
 }
