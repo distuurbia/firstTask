@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/caarlos0/env/v8"
 	"github.com/distuurbia/firstTask/internal/config"
 	"github.com/distuurbia/firstTask/internal/handler"
 	customMidleware "github.com/distuurbia/firstTask/internal/middleware"
@@ -18,7 +19,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"github.com/caarlos0/env/v8"
 )
 
 // ConnectPgx connects to the pgxpool
@@ -80,6 +80,7 @@ func main() {
 	case MongoDB:
 		client, err := ConnectMongo()
 		if err != nil {
+			//nolint:gocritic
 			log.Fatal("could not construct the client: ", err)
 		}
 		rpsMongo := repository.NewRepositoryMongo(client)
@@ -88,6 +89,7 @@ func main() {
 		handl = handler.NewHandler(srvPers, srvUser, validate)
 		defer func() {
 			if err = client.Disconnect(context.Background()); err != nil {
+				//nolint:gocritic
 				log.Fatal("could not disconnect ", err)
 			}
 		}()
@@ -98,7 +100,7 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.POST("/persondb", handl.Create, customMidleware.JWTMiddleware())
+	e.POST("/persondb", handl.Create)
 	e.GET("/persondb/:id", handl.ReadRow, customMidleware.JWTMiddleware())
 	e.PUT("/persondb/:id", handl.Update, customMidleware.JWTMiddleware())
 	e.DELETE("/persondb/:id", handl.Delete, customMidleware.JWTMiddleware())
@@ -106,5 +108,7 @@ func main() {
 	e.POST("/signUp", handl.SignUp)
 	e.POST("/login", handl.Login)
 	e.POST("/refresh", handl.Refresh)
+	e.GET("/downloadImage/:imageName", handl.DownloadImage)
+	e.POST("/uploadImage", handl.UploadImage)
 	e.Logger.Fatal(e.Start(":8080"))
 }

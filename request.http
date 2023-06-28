@@ -34,3 +34,6 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d {'"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc3ODk0MDYsImlkIjoiZGE5ZDAxZjktZTE3My00MDI1LWE4OTYtZDgxMTJmNWUxMzczIn0.ljKzgqcx03GVVIX9I-WisjSqgrPgi6BRTccCquoAwMk", "refreshToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgwNDc3MDYsImlkIjoiZGE5ZDAxZjktZTE3My00MDI1LWE4OTYtZDgxMTJmNWUxMzczIn0.lTIZ6YRamJmEDq-DIp520JiCp3HjBMELVFgfAWkh6J4"'} \
   http://localhost:8080/refresh
+###
+curl http://localhost:8080/downloadImage/andy.png
+###

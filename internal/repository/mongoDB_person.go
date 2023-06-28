@@ -52,7 +52,6 @@ func (rpsMongo *Mongo) GetAll(ctx context.Context) ([]model.Person, error) {
 	filter := bson.M{}
 	var allPers []model.Person
 	cursor, err := coll.Find(ctx, filter)
-
 	if err != nil {
 		return nil, fmt.Errorf("PersonMongo -> GetAll -> Find -> error: %w", err)
 	}

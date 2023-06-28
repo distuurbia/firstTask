@@ -3,7 +3,9 @@ package handler
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/distuurbia/firstTask/internal/model"
 	"github.com/distuurbia/firstTask/internal/service"
@@ -214,4 +216,62 @@ func (handl *EntityHandler) Refresh(c echo.Context) error {
 		"access token":  tokenPair.AccessToken,
 		"refresh token": tokenPair.RefreshToken,
 	})
+}
+
+// DownloadImage downloads image from server
+func (handl *EntityHandler) DownloadImage(c echo.Context) error {
+	imgName := c.Param("imageName")
+	imgPath := "images/download/" + imgName
+	if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+		logrus.Errorf("EntityHandler -> DownloadImage -> os.Stat -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "image not found")
+	}
+	img, err := os.Open(imgPath)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> DownloadImage -> os.Open -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "image not found")
+	}
+	defer img.Close()
+	c.Response().Header().Set("Content-Type", "image/png")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename="+imgName)
+	_, err = io.Copy(c.Response(), img)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> DownloadImage -> io.copy -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "image not found")
+	}
+	return nil
+}
+
+// UploadImage uploads image to server
+func (handl *EntityHandler) UploadImage(c echo.Context) error {
+	image, err := c.FormFile("image")
+	if err != nil {
+		logrus.Errorf("EntityHandler -> UploadImage -> c.FormFile -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "image not found")
+	}
+	src, err := image.Open()
+	if err != nil {
+		logrus.Errorf("EntityHandler -> UploadImage -> image.Open -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "image not found")
+	}
+	defer src.Close()
+	dstPath := "images/upload/" + image.Filename
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> UploadImage -> os.Create -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "failed to create")
+	}
+	defer dst.Close()
+	if _, err = io.Copy(dst, src); err != nil {
+		logrus.Errorf("EntityHandler -> UploadImage -> io.Copy -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "failed to copy")
+	}
+	c.Response().Header().Set("Content-Type", "image/png")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename="+dst.Name())
+	_, err = io.Copy(c.Response(), dst)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> UploadImage -> io.Copy -> error: %v", err)
+		return echo.NewHTTPError(http.StatusNotFound, "failed to copy")
+	}
+	return nil
 }
