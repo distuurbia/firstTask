@@ -5,23 +5,24 @@ curl -H 'Content-Type: application/json' \
   -d '{"salary":100, "married":true, "profession":"football player"}' \
   http://localhost:8080/persondb 
 ###
-curl http://localhost:8080/persondb/ebd74a3d-2dc3-4642-aa2e-384499a98d1c \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc4Nzk4MzgsImlkIjoiOTk0NjIxZjAtNTQ4Ni00OTY3LWI3ZmMtYjQ4OTU5ZWMxMzNmIn0.DD0jGRqQeCMeQyL4U_7SpdtrXYxajkXLNbMFh66JMG4"
+curl http://localhost:8080/persondb/aa715651-d339-45bb-83de-d2701b449094 \
+###
+curl http://localhost:8080/persondb
 
 ###
 curl -X PUT \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc3MTUyMDJ9.PD_t4lx8gDfjfMrlXDkYq_dwxt30F7ZtTSrRwEsIZRs" \
-  -d '{"Salary":1000000, "Married":true, "Profession":"football player"}' \
-  http://localhost:8080/persondb/a8fe07da-2e75-41fe-a7fb-4974e9f5a8da
+  # -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc3MTUyMDJ9.PD_t4lx8gDfjfMrlXDkYq_dwxt30F7ZtTSrRwEsIZRs" \
+  -d '{"Salary":2000, "Married":true, "Profession":"trainer"}' \
+  http://localhost:8080/persondb/ebd74a3d-2dc3-4642-aa2e-384499a98d1c
 ###
 
-curl -X DELETE http://localhost:8080/persondb/09277794-cd9d-46d3-a4b7-06458c7c63a5
+curl -X DELETE http://localhost:8080/persondb/a8fe07da-2e75-41fe-a7fb-4974e9f5a8da
 
 ###
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -d {'"username":"Jake", "password":"minovich12"'} \
+  -d {'"username":"Mfffffon", "password":"minovich12"'} \
   http://localhost:8080/signUp
 ###
 curl -X POST  \

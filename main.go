@@ -14,6 +14,7 @@ import (
 	"github.com/distuurbia/firstTask/internal/repository"
 	"github.com/distuurbia/firstTask/internal/service"
 	"github.com/go-playground/validator/v10"
+	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -23,8 +24,9 @@ import (
 
 // ConnectPgx connects to the pgxpool
 func ConnectPgx() (*pgxpool.Pool, error) {
-	var cfg config.Config
-	if err := env.Parse(&cfg); err != nil {
+	cfg := config.Config{}
+	err := env.Parse(&cfg)
+	if err != nil {
 		return nil, err
 	}
 	cfgPgx, err := pgxpool.ParseConfig(cfg.PgxConnectionString)
@@ -54,10 +56,22 @@ func ConnectMongo() (*mongo.Client, error) {
 	return client, nil
 }
 
+// ConnectRedis connects to the redis db
+func ConnectRedis() *redis.Client {
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "minovich12",
+		DB:       0,
+	})
+	return client
+}
+
 // main is an executable function
 func main() {
 	var handl *handler.EntityHandler
 	validate := validator.New()
+	rdsClient := ConnectRedis()
+	rds := repository.NewRepositoryRedis(rdsClient)
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
 	var dbChoose int
 	_, err := fmt.Scan(&dbChoose)
@@ -74,7 +88,7 @@ func main() {
 		}
 		defer dbpool.Close()
 		persPgx := repository.NewRepositoryPgx(dbpool)
-		persSrv := service.NewPersonService(persPgx)
+		persSrv := service.NewPersonService(persPgx, rds)
 		userSrv := service.NewUserService(persPgx)
 		handl = handler.NewHandler(persSrv, userSrv, validate)
 	case MongoDB:
@@ -84,7 +98,7 @@ func main() {
 			log.Fatal("could not construct the client: ", err)
 		}
 		rpsMongo := repository.NewRepositoryMongo(client)
-		srvPers := service.NewPersonService(rpsMongo)
+		srvPers := service.NewPersonService(rpsMongo, rds)
 		srvUser := service.NewUserService(rpsMongo)
 		handl = handler.NewHandler(srvPers, srvUser, validate)
 		defer func() {
@@ -100,10 +114,11 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.POST("/persondb", handl.Create)
+	e.POST("/persondb", handl.Create, customMidleware.JWTMiddleware())
 	e.GET("/persondb/:id", handl.ReadRow, customMidleware.JWTMiddleware())
+	e.GET("/persondb", handl.GetAll, customMidleware.JWTMiddleware())
 	e.PUT("/persondb/:id", handl.Update, customMidleware.JWTMiddleware())
-	e.DELETE("/persondb/:id", handl.Delete, customMidleware.JWTMiddleware())
+	e.DELETE("/persondb/:id", handl.Delete)
 
 	e.POST("/signUp", handl.SignUp)
 	e.POST("/login", handl.Login)

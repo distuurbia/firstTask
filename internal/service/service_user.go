@@ -92,34 +92,11 @@ func (srvUser *UserService) Login(ctx context.Context, user *model.User) (TokenP
 
 // Refresh is a method of ServiceUser that refeshes access token and refresh token
 func (srvUser *UserService) Refresh(ctx context.Context, tokenPair TokenPair) (TokenPair, error) {
-	var cfg config.Config
-	if err := env.Parse(&cfg); err != nil {
-		return TokenPair{}, err
-	}
-	accessToken, err := middleware.ValidateToken(tokenPair.AccessToken, cfg.SecretKey)
+	id, err := srvUser.TokensIDCompare(tokenPair)
 	if err != nil {
-		return TokenPair{}, fmt.Errorf("ServiceUser -> Refresh -> accessToken -> middleware -> ValidateToken")
+		return TokenPair{}, fmt.Errorf("ServiceUser -> Refresh -> TokensIDCompare -> error: %w", err)
 	}
-	var accessID uuid.UUID
-	if claims, ok := accessToken.Claims.(jwt.MapClaims); ok && accessToken.Valid {
-		accessID = uuid.MustParse(claims["id"].(string))
-	}
-	refreshToken, err := middleware.ValidateToken(tokenPair.RefreshToken, cfg.SecretKey)
-	if err != nil {
-		return TokenPair{}, fmt.Errorf("ServiceUser -> Refresh -> refreshToken -> middleware -> ValidateToken")
-	}
-	var refreshID uuid.UUID
-	if claims, ok := refreshToken.Claims.(jwt.MapClaims); ok && refreshToken.Valid {
-		exp := claims["exp"].(float64)
-		refreshID = uuid.MustParse(claims["id"].(string))
-		if exp < float64(time.Now().Unix()) {
-			return TokenPair{}, fmt.Errorf("ServiceUser ->  Refresh -> middleware -> ValidateToken -> error: %w", err)
-		}
-	}
-	if accessID != refreshID {
-		return TokenPair{}, fmt.Errorf("user ID in acess token doesn't equal user ID in refresh token")
-	}
-	hash, err := srvUser.rpsUser.GetRefreshTokenByID(ctx, accessID)
+	hash, err := srvUser.rpsUser.GetRefreshTokenByID(ctx, id)
 	if err != nil {
 		return TokenPair{}, fmt.Errorf("ServiceUser ->  Refresh -> RepositoryUser -> GetPasswordByUsernsame -> error: %w", err)
 	}
@@ -128,7 +105,7 @@ func (srvUser *UserService) Refresh(ctx context.Context, tokenPair TokenPair) (T
 	if err != nil || !verified {
 		return TokenPair{}, fmt.Errorf("ServiceUser ->  Refresh -> CheckPasswordHash -> error: refreshToken invalid")
 	}
-	tokenPair, err = srvUser.GenerateTokenPair(accessID)
+	tokenPair, err = srvUser.GenerateTokenPair(id)
 	if err != nil {
 		return TokenPair{}, fmt.Errorf("ServiceUser ->  Refresh -> GenerateTokenPair -> error: %w", err)
 	}
@@ -139,12 +116,44 @@ func (srvUser *UserService) Refresh(ctx context.Context, tokenPair TokenPair) (T
 	}
 	var user model.User
 	user.RefreshToken = string(hashedRefreshToken)
-	user.ID = accessID
+	user.ID = id
 	err = srvUser.rpsUser.AddRefreshToken(context.Background(), &user)
 	if err != nil {
 		return TokenPair{}, fmt.Errorf("ServiceUsere ->  Refresh -> RepositoryUser -> AddRefreshToken -> error: %w", err)
 	}
 	return tokenPair, nil
+}
+
+// TokensIDCompare compares IDs from refresh and access token for being equal
+func (srvUser *UserService) TokensIDCompare(tokenPair TokenPair) (uuid.UUID, error) {
+	var cfg config.Config
+	if err := env.Parse(&cfg); err != nil {
+		return uuid.Nil, err
+	}
+	accessToken, err := middleware.ValidateToken(tokenPair.AccessToken, cfg.SecretKey)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> accessToken -> middleware -> ValidateToken")
+	}
+	var accessID uuid.UUID
+	if claims, ok := accessToken.Claims.(jwt.MapClaims); ok && accessToken.Valid {
+		accessID = uuid.MustParse(claims["id"].(string))
+	}
+	refreshToken, err := middleware.ValidateToken(tokenPair.RefreshToken, cfg.SecretKey)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> refreshToken -> middleware -> ValidateToken")
+	}
+	var refreshID uuid.UUID
+	if claims, ok := refreshToken.Claims.(jwt.MapClaims); ok && refreshToken.Valid {
+		exp := claims["exp"].(float64)
+		refreshID = uuid.MustParse(claims["id"].(string))
+		if exp < float64(time.Now().Unix()) {
+			return uuid.Nil, fmt.Errorf("ServiceUser ->  TokensIDCompare -> middleware -> ValidateToken -> error: %w", err)
+		}
+	}
+	if accessID != refreshID {
+		return uuid.Nil, fmt.Errorf("user ID in acess token doesn't equal user ID in refresh token")
+	}
+	return accessID, nil
 }
 
 // HashPassword is a method of ServiceUser that makes from bytes hashed value

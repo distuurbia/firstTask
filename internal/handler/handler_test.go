@@ -23,11 +23,11 @@ var vladimir = model.Person{
 }
 
 // srvc is object of *mocks.Service
-var srvc *mocks.Service
+var srvc *mocks.PersonService
 
 // TestMain execute all tests
 func TestMain(m *testing.M) {
-	srvc = new(mocks.Service)
+	srvc = new(mocks.PersonService)
 	exitVal := m.Run()
 	os.Exit(exitVal)
 }
@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 func TestCreate(t *testing.T) {
 	srvc.On("Create", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
 
-	handl := service.NewPersonService(srvc)
+	handl := service.NewPersonService(srvc, nil)
 	err := handl.Create(context.Background(), &vladimir)
 	assert.NoError(t, err)
 
@@ -46,7 +46,7 @@ func TestCreate(t *testing.T) {
 // TestReadRow is a mocktest for ReadRow method of interface Service
 func TestReadRow(t *testing.T) {
 	srvc.On("ReadRow", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(&vladimir, nil)
-	handle := service.NewPersonService(srvc)
+	handle := service.NewPersonService(srvc, nil)
 	testVladimir, err := handle.ReadRow(context.Background(), vladimir.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, testVladimir.ID, vladimir.ID)
@@ -58,7 +58,7 @@ func TestReadRow(t *testing.T) {
 
 func TestGetAll(t *testing.T) {
 	srvc.On("GetAll", mock.Anything).Return([]model.Person{vladimir}, nil)
-	handle := service.NewPersonService(srvc)
+	handle := service.NewPersonService(srvc, nil)
 	allPers, err := handle.GetAll(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(t, len(allPers), len([]model.Person{vladimir}))
@@ -70,7 +70,7 @@ func TestUpdate(t *testing.T) {
 	vladimir.Salary = 700
 	vladimir.Married = false
 	vladimir.Profession = "Lawer"
-	handle := service.NewPersonService(srvc)
+	handle := service.NewPersonService(srvc, nil)
 	err := handle.Update(context.Background(), &vladimir)
 	assert.NoError(t, err)
 	testVladimir, err := handle.ReadRow(context.Background(), vladimir.ID)
@@ -86,7 +86,7 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	srvc.On("Delete", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(nil)
 
-	handle := service.NewPersonService(srvc)
+	handle := service.NewPersonService(srvc, nil)
 	err := handle.Delete(context.Background(), vladimir.ID)
 	assert.NoError(t, err)
 

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/distuurbia/firstTask/internal/model"
 	"github.com/distuurbia/firstTask/internal/service"
@@ -226,12 +227,17 @@ func (handl *EntityHandler) DownloadImage(c echo.Context) error {
 		logrus.Errorf("EntityHandler -> DownloadImage -> os.Stat -> error: %v", err)
 		return echo.NewHTTPError(http.StatusNotFound, "image not found")
 	}
+	imgPath = filepath.Clean(imgPath)
 	img, err := os.Open(imgPath)
 	if err != nil {
 		logrus.Errorf("EntityHandler -> DownloadImage -> os.Open -> error: %v", err)
 		return echo.NewHTTPError(http.StatusNotFound, "image not found")
 	}
-	defer img.Close()
+	defer func() {
+		if err = img.Close(); err != nil {
+			logrus.Errorf("EntityHandler -> DownloadImage -> img.Close -> error: %v", err)
+		}
+	}()
 	c.Response().Header().Set("Content-Type", "image/png")
 	c.Response().Header().Set("Content-Disposition", "attachment; filename="+imgName)
 	_, err = io.Copy(c.Response(), img)
@@ -254,14 +260,23 @@ func (handl *EntityHandler) UploadImage(c echo.Context) error {
 		logrus.Errorf("EntityHandler -> UploadImage -> image.Open -> error: %v", err)
 		return echo.NewHTTPError(http.StatusNotFound, "image not found")
 	}
-	defer src.Close()
+	defer func() {
+		if err = src.Close(); err != nil {
+			logrus.Errorf("EntityHandler -> uploadImage -> src.Close -> error: %v", err)
+		}
+	}()
 	dstPath := "images/upload/" + image.Filename
+	dstPath = filepath.Clean(dstPath)
 	dst, err := os.Create(dstPath)
 	if err != nil {
 		logrus.Errorf("EntityHandler -> UploadImage -> os.Create -> error: %v", err)
 		return echo.NewHTTPError(http.StatusNotFound, "failed to create")
 	}
-	defer dst.Close()
+	defer func() {
+		if err = dst.Close(); err != nil {
+			logrus.Errorf("EntityHandler -> uploadImage -> dst.Close -> error: %v", err)
+		}
+	}()
 	if _, err = io.Copy(dst, src); err != nil {
 		logrus.Errorf("EntityHandler -> UploadImage -> io.Copy -> error: %v", err)
 		return echo.NewHTTPError(http.StatusNotFound, "failed to copy")
