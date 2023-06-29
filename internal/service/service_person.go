@@ -24,6 +24,9 @@ type PersonRedisRepository interface {
 	Set(ctx context.Context, user *model.Person) error
 	Get(ctx context.Context, id uuid.UUID) (*model.Person, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	AddToStream(ctx context.Context, pers *model.Person) error
+	GetFromStream(ctx context.Context, id uuid.UUID) (*model.Person, error)
+	DeleteFromStream(ctx context.Context, id uuid.UUID) error
 }
 
 // PersonService contains Repository interface
@@ -43,7 +46,7 @@ func (srv *PersonService) Create(ctx context.Context, pers *model.Person) error 
 	if err != nil {
 		return fmt.Errorf("PersonService -> Create -> persRps.Create -> error: %w", err)
 	}
-	err = srv.persRdsRps.Set(ctx, pers)
+	err = srv.persRdsRps.AddToStream(ctx, pers)
 	if err != nil {
 		return fmt.Errorf("PersonService -> Create -> persRdsRps.Set -> error: %w", err)
 	}
@@ -52,7 +55,7 @@ func (srv *PersonService) Create(ctx context.Context, pers *model.Person) error 
 
 // ReadRow is a method of PersonService that calls ReadRow method of Repository
 func (srv *PersonService) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
-	pers, err := srv.persRdsRps.Get(ctx, id)
+	pers, err := srv.persRdsRps.GetFromStream(ctx, id)
 	if err != nil && err != redis.Nil {
 		return nil, fmt.Errorf("PersonService -> ReadRow -> persRdsRps.Get -> error: %w", err)
 	}
@@ -75,7 +78,7 @@ func (srv *PersonService) Update(ctx context.Context, pers *model.Person) error 
 	if err != nil {
 		return fmt.Errorf("PersonService -> Update -> persRps -> Update -> error: %w", err)
 	}
-	err = srv.persRdsRps.Set(ctx, pers)
+	err = srv.persRdsRps.AddToStream(ctx, pers)
 	if err != nil {
 		return fmt.Errorf("PersonService -> Update -> persRdsRps.Set -> error: %w", err)
 	}
@@ -88,7 +91,7 @@ func (srv PersonService) Delete(ctx context.Context, id uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("PersonService -> Delete -> persRps.Delete -> error: %w", err)
 	}
-	err = srv.persRdsRps.Delete(ctx, id)
+	err = srv.persRdsRps.DeleteFromStream(ctx, id)
 	if err != nil {
 		return fmt.Errorf("PersonService -> Delete -> persRdsRps.Delete -> error: %w", err)
 	}

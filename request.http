@@ -1,8 +1,8 @@
 
 curl -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc3MTUyMDJ9.PD_t4lx8gDfjfMrlXDkYq_dwxt30F7ZtTSrRwEsIZRs" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgwNjMzMzMsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.z_p24NZa38mIfbeKGJHpiV9BHeCdZ8Qh1fClJxNRV7E" \
   -X POST \
-  -d '{"salary":100, "married":true, "profession":"football player"}' \
+  -d '{"salary":500, "married":true, "profession":"hockey player"}' \
   http://localhost:8080/persondb 
 ###
 curl http://localhost:8080/persondb/aa715651-d339-45bb-83de-d2701b449094 \
@@ -22,12 +22,12 @@ curl -X DELETE http://localhost:8080/persondb/a8fe07da-2e75-41fe-a7fb-4974e9f5a8
 ###
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -d {'"username":"Mfffffon", "password":"minovich12"'} \
+  -d {'"username":"Mfffn", "password":"minovich12"'} \
   http://localhost:8080/signUp
 ###
 curl -X POST  \
   -H 'Content-Type: application/json' \
-  -d {'"username":"Jake", "password":"minovich12"'} \
+  -d {'"username":"Mfffn", "password":"minovich12"'} \
   http://localhost:8080/login
 
 ###
