@@ -45,6 +45,15 @@ func NewHandler(srvcPers PersonService, srvcUser UserService, validate *validato
 }
 
 // Create calls Create method of Service by handler
+// @Summary Create a new entity
+// @Description Creates a new entity
+// @Tags Entity
+// @Accept json
+// @Produce json
+// @Param entity body model.Person true "Entity data"
+// @Success 201 {object} model.Person
+// @Failure 400 {object} error
+// @Router /entity [post]
 func (handl *EntityHandler) Create(c echo.Context) error {
 	var createdPerson model.Person
 	createdPerson.ID = uuid.New()
@@ -67,6 +76,14 @@ func (handl *EntityHandler) Create(c echo.Context) error {
 }
 
 // ReadRow calls ReadRow method of Service by handler
+// @Summary Get a person by ID
+// @Description Get a person by ID
+// @Accept json
+// @Produce json
+// @Param id path string true "Person ID"
+// @Success 200 {object} model.Person
+// @Failure 400 {object} error
+// @Router /persons/{id} [get]
 func (handl *EntityHandler) ReadRow(c echo.Context) error {
 	id := c.Param("id")
 	err := handl.validate.VarCtx(c.Request().Context(), id, "required,uuid")
@@ -83,6 +100,13 @@ func (handl *EntityHandler) ReadRow(c echo.Context) error {
 }
 
 // GetAll calls GetAll method of Service by handler
+// @Summary Get all persons
+// @Description Get all persons
+// @Accept json
+// @Produce json
+// @Success 200 {array} model.Person
+// @Failure 400 {object} error
+// @Router /persons [get]
 func (handl *EntityHandler) GetAll(c echo.Context) error {
 	persAll, err := handl.srvcPers.GetAll(c.Request().Context())
 	if err != nil {
@@ -93,6 +117,15 @@ func (handl *EntityHandler) GetAll(c echo.Context) error {
 }
 
 // Update calls Update method of Service by handler
+// @Summary Update a person by ID
+// @Description Update a person by ID
+// @Accept json
+// @Produce json
+// @Param id path string true "Person ID"
+// @Param person body model.Person true "Updated person object"
+// @Success 200 {object} model.Person
+// @Failure 400 {object} error
+// @Router /persons/{id} [put]
 func (handl *EntityHandler) Update(c echo.Context) error {
 	var updatedPerson model.Person
 	id := c.Param("id")
@@ -121,6 +154,14 @@ func (handl *EntityHandler) Update(c echo.Context) error {
 }
 
 // Delete calls Delete method of Service by handler
+// @Summary Delete a person by ID
+// @Description Delete a person by ID
+// @Accept json
+// @Produce json
+// @Param id path string true "Person ID"
+// @Success 204
+// @Failure 400 {object} error
+// @Router /persons/{id} [delete]
 func (handl *EntityHandler) Delete(c echo.Context) error {
 	id := c.Param("id")
 	err := handl.validate.VarCtx(c.Request().Context(), id, "required,uuid")
@@ -137,6 +178,14 @@ func (handl *EntityHandler) Delete(c echo.Context) error {
 }
 
 // SignUp calls SignIn method of Service by handler
+// @Summary Sign up a new user
+// @Description Sign up a new user
+// @Accept json
+// @Produce json
+// @Param user body model.User true "User object"
+// @Success 201 {string} string
+// @Failure 400 {object} error
+// @Router /signup [post]
 func (handl *EntityHandler) SignUp(c echo.Context) error {
 	bindInfo := struct {
 		Username string `json:"username" validate:"required,min=4,max=15"`
@@ -164,7 +213,16 @@ func (handl *EntityHandler) SignUp(c echo.Context) error {
 	return c.JSON(http.StatusCreated, "ID: "+createdUser.ID.String())
 }
 
-// Login calls Login method of Service by handler
+// Login authenticates user and returns access and refresh tokens
+// @Summary User login
+// @Description Authenticates a user with the provided username and password
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param loginInfo body map[string]interface{} true "Login information"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} error
+// @Router /login [post]
 func (handl *EntityHandler) Login(c echo.Context) error {
 	bindInfo := struct {
 		Username string `json:"username"`
@@ -195,6 +253,15 @@ func (handl *EntityHandler) Login(c echo.Context) error {
 }
 
 // Refresh refreshes pair of access and refresh tokens
+// @Summary Refreshes access and refresh tokens
+// @Description Refreshes the access and refresh tokens using the provided refresh token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body map[string]interface{} true "Refresh token"
+// @Success 200 {object} map[string]interface{} "Token pair"
+// @Failure 400 {object} error
+// @Router /refresh [post]
 func (handl *EntityHandler) Refresh(c echo.Context) error {
 	bindInfo := struct {
 		AccessToken  string `json:"accessToken"`
@@ -220,6 +287,15 @@ func (handl *EntityHandler) Refresh(c echo.Context) error {
 }
 
 // DownloadImage downloads image from server
+// @Summary Download an image
+// @Description Downloads the specified image from the server
+// @Tags Images
+// @Accept json
+// @Produce octet-stream
+// @Param imageName path string true "Image filename"
+// @Success 200 {file} octet-stream "Image file"
+// @Failure 404 {object} error
+// @Router /images/download/{imageName} [get]
 func (handl *EntityHandler) DownloadImage(c echo.Context) error {
 	imgName := c.Param("imageName")
 	imgPath := "images/download/" + imgName
@@ -249,6 +325,15 @@ func (handl *EntityHandler) DownloadImage(c echo.Context) error {
 }
 
 // UploadImage uploads image to server
+// @Summary Upload an image
+// @Description Uploads an image to the server
+// @Tags Images
+// @Accept multipart/form-data
+// @Produce json
+// @Param image formData file true "Image file"
+// @Success 200 {string} string "OK"
+// @Failure 404 {object} error
+// @Router /images/upload [post]
 func (handl *EntityHandler) UploadImage(c echo.Context) error {
 	image, err := c.FormFile("image")
 	if err != nil {

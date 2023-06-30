@@ -20,6 +20,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 // ConnectPgx connects to the pgxpool
@@ -66,7 +67,11 @@ func ConnectRedis() *redis.Client {
 	return client
 }
 
-// main is an executable function
+// @title FirstTask API
+// @description API for managing persons and users
+// @version 1.0
+// @host localhost:8080
+// @BasePath /
 func main() {
 	var handl *handler.EntityHandler
 	validate := validator.New()
@@ -114,16 +119,20 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.POST("/persondb", handl.Create, customMidleware.JWTMiddleware())
-	e.GET("/persondb/:id", handl.ReadRow, customMidleware.JWTMiddleware())
-	e.GET("/persondb", handl.GetAll, customMidleware.JWTMiddleware())
-	e.PUT("/persondb/:id", handl.Update, customMidleware.JWTMiddleware())
-	e.DELETE("/persondb/:id", handl.Delete)
+
+	e.POST("/persons", handl.Create, customMidleware.JWTMiddleware())
+	e.GET("/persons/:id", handl.ReadRow, customMidleware.JWTMiddleware())
+	e.GET("/persons", handl.GetAll, customMidleware.JWTMiddleware())
+	e.PUT("/persons/:id", handl.Update, customMidleware.JWTMiddleware())
+	e.DELETE("/persons/:id", handl.Delete, customMidleware.JWTMiddleware())
 
 	e.POST("/signUp", handl.SignUp)
 	e.POST("/login", handl.Login)
 	e.POST("/refresh", handl.Refresh)
 	e.GET("/downloadImage/:imageName", handl.DownloadImage)
 	e.POST("/uploadImage", handl.UploadImage)
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+
 	e.Logger.Fatal(e.Start(":8080"))
 }

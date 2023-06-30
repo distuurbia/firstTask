@@ -1,0 +1,285 @@
+basePath: /
+definitions:
+  model.Person:
+    properties:
+      ID:
+        type: string
+      married:
+        type: boolean
+      profession:
+        maxLength: 30
+        minLength: 3
+        type: string
+      salary:
+        maximum: 100000
+        minimum: 100
+        type: integer
+    required:
+    - profession
+    - salary
+    type: object
+  model.User:
+    properties:
+      ID:
+        type: string
+      password:
+        items:
+          type: integer
+        maxItems: 15
+        minItems: 4
+        type: array
+      refreshToken:
+        type: string
+      username:
+        maxLength: 15
+        minLength: 4
+        type: string
+    required:
+    - password
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for managing persons and users
+  title: FirstTask API
+  version: "1.0"
+paths:
+  /entity:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new entity
+      parameters:
+      - description: Entity data
+        in: body
+        name: entity
+        required: true
+        schema:
+          $ref: '#/definitions/model.Person'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Person'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Create a new entity
+      tags:
+      - Entity
+  /images/download/{imageName}:
+    get:
+      consumes:
+      - application/json
+      description: Downloads the specified image from the server
+      parameters:
+      - description: Image filename
+        in: path
+        name: imageName
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Image file
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema: {}
+      summary: Download an image
+      tags:
+      - Images
+  /images/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads an image to the server
+      parameters:
+      - description: Image file
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema: {}
+      summary: Upload an image
+      tags:
+      - Images
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user with the provided username and password
+      parameters:
+      - description: Login information
+        in: body
+        name: loginInfo
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: User login
+      tags:
+      - User
+  /persons:
+    get:
+      consumes:
+      - application/json
+      description: Get all persons
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Person'
+            type: array
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Get all persons
+  /persons/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a person by ID
+      parameters:
+      - description: Person ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Delete a person by ID
+    get:
+      consumes:
+      - application/json
+      description: Get a person by ID
+      parameters:
+      - description: Person ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Person'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Get a person by ID
+    put:
+      consumes:
+      - application/json
+      description: Update a person by ID
+      parameters:
+      - description: Person ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated person object
+        in: body
+        name: person
+        required: true
+        schema:
+          $ref: '#/definitions/model.Person'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Person'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Update a person by ID
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refreshes the access and refresh tokens using the provided refresh
+        token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token pair
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Refreshes access and refresh tokens
+      tags:
+      - Authentication
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Sign up a new user
+      parameters:
+      - description: User object
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Sign up a new user
+swagger: "2.0"
