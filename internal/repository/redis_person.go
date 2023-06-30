@@ -23,17 +23,17 @@ func NewRepositoryRedis(client *redis.Client) *Redis {
 
 // Set sets cache of person in redis db
 func (rds *Redis) Set(ctx context.Context, pers *model.Person) error {
-	userJSON, err := json.Marshal(pers)
+	persJSON, err := json.Marshal(pers)
 	if err != nil {
 		return fmt.Errorf("Redis -> Set -> json.Marshal -> error: %w", err)
 	}
-	rds.client.HSet(ctx, "person", pers.ID.String(), userJSON)
+	rds.client.HSet(ctx, "person", pers.ID.String(), persJSON)
 	return nil
 }
 
 // Get gets cache of person from redis db
 func (rds *Redis) Get(ctx context.Context, id uuid.UUID) (*model.Person, error) {
-	userJSON, err := rds.client.HGet(ctx, "person", id.String()).Result()
+	persJSON, err := rds.client.HGet(ctx, "person", id.String()).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, err
@@ -41,7 +41,7 @@ func (rds *Redis) Get(ctx context.Context, id uuid.UUID) (*model.Person, error) 
 		return nil, fmt.Errorf("Redis -> Get -> client.HGet -> error: %w", err)
 	}
 	var pers model.Person
-	err = json.Unmarshal([]byte(userJSON), &pers)
+	err = json.Unmarshal([]byte(persJSON), &pers)
 	if err != nil {
 		return nil, fmt.Errorf("Redis -> Get -> json.Unmarshal -> error: %w", err)
 	}
@@ -58,14 +58,14 @@ func (rds *Redis) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (rdsStream *Redis) AddToStream(ctx context.Context, pers *model.Person) error {
-	userJSON, err := json.Marshal(pers)
+	persJSON, err := json.Marshal(pers)
 	if err != nil {
 		return fmt.Errorf("RedisStreamRepository -> AddToStream -> json.Marshal -> error: %w", err)
 	}
 	streamData := redis.XAddArgs{
 		Stream: "person_stream",
 		Values: map[string]interface{}{
-			"data": string(userJSON),
+			"data": string(persJSON),
 		},
 	}
 	_, err = rdsStream.client.XAdd(ctx, &streamData).Result()
@@ -90,9 +90,9 @@ func (rdsStream *Redis) GetFromStream(ctx context.Context, id uuid.UUID) (*model
 	if len(results) == 0 || len(results[0].Messages) == 0 {
 		return nil, redis.Nil
 	}
-	personData := results[0].Messages[0].Values["data"].(string)
+	persJSON := results[0].Messages[0].Values["data"].(string)
 	var pers model.Person
-	err = json.Unmarshal([]byte(personData), &pers)
+	err = json.Unmarshal([]byte(persJSON), &pers)
 	if err != nil {
 		return nil, fmt.Errorf("RedisStreamRepository -> GetFromStream -> json.Unmarshal -> error: %w", err)
 	}
