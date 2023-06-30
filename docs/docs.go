@@ -16,44 +16,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/entity": {
-            "post": {
-                "description": "Creates a new entity",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Entity"
-                ],
-                "summary": "Create a new entity",
-                "parameters": [
-                    {
-                        "description": "Entity data",
-                        "name": "entity",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.Person"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/model.Person"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {}
-                    }
-                }
-            }
-        },
         "/images/download/{imageName}": {
             "get": {
                 "description": "Downloads the specified image from the server",
@@ -141,13 +103,12 @@ const docTemplate = `{
                 "summary": "User login",
                 "parameters": [
                     {
-                        "description": "Login information",
-                        "name": "loginInfo",
+                        "description": "userRequest value (model.PersonRequest)",
+                        "name": "userRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/model.UserRequest"
                         }
                     }
                 ],
@@ -155,8 +116,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/service.TokenPair"
                         }
                     },
                     "400": {
@@ -175,7 +135,19 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "Person"
+                ],
                 "summary": "Get all persons",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -184,6 +156,49 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/model.Person"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new person",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Person"
+                ],
+                "summary": "Create a new person",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "personRequest value (model.PersonRequest)",
+                        "name": "personRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PersonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Person"
                         }
                     },
                     "400": {
@@ -202,8 +217,18 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "Person"
+                ],
                 "summary": "Get a person by ID",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Person ID",
@@ -233,8 +258,18 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "Person"
+                ],
                 "summary": "Update a person by ID",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Person ID",
@@ -243,12 +278,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Updated person object",
-                        "name": "person",
+                        "description": "personRequest value (model.PersonRequest)",
+                        "name": "personRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.Person"
+                            "$ref": "#/definitions/model.PersonRequest"
                         }
                     }
                 ],
@@ -273,8 +308,18 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "Person"
+                ],
                 "summary": "Delete a person by ID",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token for authentication",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "description": "Person ID",
@@ -321,10 +366,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Token pair",
+                        "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/service.TokenPair"
                         }
                     },
                     "400": {
@@ -334,7 +378,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/signup": {
+        "/signUp": {
             "post": {
                 "description": "Sign up a new user",
                 "consumes": [
@@ -343,15 +387,18 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "User"
+                ],
                 "summary": "Sign up a new user",
                 "parameters": [
                     {
-                        "description": "User object",
-                        "name": "user",
+                        "description": "userRequest value (model.PersonRequest)",
+                        "name": "userRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.User"
+                            "$ref": "#/definitions/model.UserRequest"
                         }
                     }
                 ],
@@ -396,31 +443,55 @@ const docTemplate = `{
                 }
             }
         },
-        "model.User": {
+        "model.PersonRequest": {
+            "type": "object",
+            "required": [
+                "profession",
+                "salary"
+            ],
+            "properties": {
+                "married": {
+                    "type": "boolean"
+                },
+                "profession": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                },
+                "salary": {
+                    "type": "integer",
+                    "maximum": 100000,
+                    "minimum": 100
+                }
+            }
+        },
+        "model.UserRequest": {
             "type": "object",
             "required": [
                 "password",
                 "username"
             ],
             "properties": {
-                "ID": {
-                    "type": "string"
-                },
                 "password": {
-                    "type": "array",
-                    "maxItems": 15,
-                    "minItems": 4,
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "refreshToken": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 15,
+                    "minLength": 4
                 },
                 "username": {
                     "type": "string",
                     "maxLength": 15,
                     "minLength": 4
+                }
+            }
+        },
+        "service.TokenPair": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
                 }
             }
         }

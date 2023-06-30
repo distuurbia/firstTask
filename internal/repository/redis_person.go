@@ -66,6 +66,7 @@ func (rdsStream *Redis) AddToStream(ctx context.Context, pers *model.Person) err
 		Stream: "person_stream",
 		Values: map[string]interface{}{
 			"data": string(persJSON),
+			"MyID": pers.ID.String(),
 		},
 	}
 	_, err = rdsStream.client.XAdd(ctx, &streamData).Result()
@@ -78,7 +79,7 @@ func (rdsStream *Redis) AddToStream(ctx context.Context, pers *model.Person) err
 // GetFromStream gets a person from the Redis Stream by ID
 func (rdsStream *Redis) GetFromStream(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 	streamData := redis.XReadArgs{
-		Streams: []string{"person_stream", id.String()},
+		Streams: []string{"person_stream"},
 		Count:   1,
 		Block:   0,
 	}
@@ -86,7 +87,6 @@ func (rdsStream *Redis) GetFromStream(ctx context.Context, id uuid.UUID) (*model
 	if err != nil {
 		return nil, fmt.Errorf("RedisStreamRepository -> GetFromStream -> XRead -> error: %w", err)
 	}
-
 	if len(results) == 0 || len(results[0].Messages) == 0 {
 		return nil, redis.Nil
 	}

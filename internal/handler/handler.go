@@ -45,15 +45,16 @@ func NewHandler(srvcPers PersonService, srvcUser UserService, validate *validato
 }
 
 // Create calls Create method of Service by handler
-// @Summary Create a new entity
-// @Description Creates a new entity
-// @Tags Entity
+// @Summary Create a new person
+// @Description Creates a new person
+// @Tags Person
 // @Accept json
 // @Produce json
-// @Param entity body model.Person true "Entity data"
+// @Param Authorization header string true "Bearer token for authentication"
+// @Param personRequest body model.PersonRequest true "personRequest value (model.PersonRequest)"
 // @Success 201 {object} model.Person
 // @Failure 400 {object} error
-// @Router /entity [post]
+// @Router /persons [post]
 func (handl *EntityHandler) Create(c echo.Context) error {
 	var createdPerson model.Person
 	createdPerson.ID = uuid.New()
@@ -78,8 +79,10 @@ func (handl *EntityHandler) Create(c echo.Context) error {
 // ReadRow calls ReadRow method of Service by handler
 // @Summary Get a person by ID
 // @Description Get a person by ID
+// @Tags Person
 // @Accept json
 // @Produce json
+// @Param Authorization header string true "Bearer token for authentication"
 // @Param id path string true "Person ID"
 // @Success 200 {object} model.Person
 // @Failure 400 {object} error
@@ -102,8 +105,10 @@ func (handl *EntityHandler) ReadRow(c echo.Context) error {
 // GetAll calls GetAll method of Service by handler
 // @Summary Get all persons
 // @Description Get all persons
+// @Tags Person
 // @Accept json
 // @Produce json
+// @Param Authorization header string true "Bearer token for authentication"
 // @Success 200 {array} model.Person
 // @Failure 400 {object} error
 // @Router /persons [get]
@@ -119,10 +124,12 @@ func (handl *EntityHandler) GetAll(c echo.Context) error {
 // Update calls Update method of Service by handler
 // @Summary Update a person by ID
 // @Description Update a person by ID
+// @Tags Person
 // @Accept json
 // @Produce json
+// @Param Authorization header string true "Bearer token for authentication"
 // @Param id path string true "Person ID"
-// @Param person body model.Person true "Updated person object"
+// @Param personRequest body model.PersonRequest true "personRequest value (model.PersonRequest)"
 // @Success 200 {object} model.Person
 // @Failure 400 {object} error
 // @Router /persons/{id} [put]
@@ -156,8 +163,10 @@ func (handl *EntityHandler) Update(c echo.Context) error {
 // Delete calls Delete method of Service by handler
 // @Summary Delete a person by ID
 // @Description Delete a person by ID
+// @Tags Person
 // @Accept json
 // @Produce json
+// @Param Authorization header string true "Bearer token for authentication"
 // @Param id path string true "Person ID"
 // @Success 204
 // @Failure 400 {object} error
@@ -177,15 +186,16 @@ func (handl *EntityHandler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// SignUp calls SignIn method of Service by handler
+// SignUp calls SignUp method of Service by handler
 // @Summary Sign up a new user
 // @Description Sign up a new user
+// @Tags User
 // @Accept json
 // @Produce json
-// @Param user body model.User true "User object"
+// @Param userRequest body model.UserRequest true "userRequest value (model.PersonRequest)"
 // @Success 201 {string} string
 // @Failure 400 {object} error
-// @Router /signup [post]
+// @Router /signUp [post]
 func (handl *EntityHandler) SignUp(c echo.Context) error {
 	bindInfo := struct {
 		Username string `json:"username" validate:"required,min=4,max=15"`
@@ -219,8 +229,8 @@ func (handl *EntityHandler) SignUp(c echo.Context) error {
 // @Tags User
 // @Accept json
 // @Produce json
-// @Param loginInfo body map[string]interface{} true "Login information"
-// @Success 200 {object} map[string]interface{}
+// @Param userRequest body model.UserRequest true "userRequest value (model.PersonRequest)"
+// @Success 200 {object} service.TokenPair
 // @Failure 400 {object} error
 // @Router /login [post]
 func (handl *EntityHandler) Login(c echo.Context) error {
@@ -259,7 +269,7 @@ func (handl *EntityHandler) Login(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param request body map[string]interface{} true "Refresh token"
-// @Success 200 {object} map[string]interface{} "Token pair"
+// @Success 200 {object} service.TokenPair
 // @Failure 400 {object} error
 // @Router /refresh [post]
 func (handl *EntityHandler) Refresh(c echo.Context) error {

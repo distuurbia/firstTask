@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	_ "github.com/distuurbia/firstTask/docs"
+
 	"github.com/caarlos0/env/v8"
 	"github.com/distuurbia/firstTask/internal/config"
 	"github.com/distuurbia/firstTask/internal/handler"
@@ -18,9 +20,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 // ConnectPgx connects to the pgxpool

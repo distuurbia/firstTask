@@ -1,11 +1,13 @@
 
 curl -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgwNjMzMzMsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.z_p24NZa38mIfbeKGJHpiV9BHeCdZ8Qh1fClJxNRV7E" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgxMzM0MDYsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.CaUIoxYy-BMH_IpoMuUtv3zvUdwoDmQn1DcC0pm3ePw" \
   -X POST \
-  -d '{"salary":500, "married":true, "profession":"hockey player"}' \
-  http://localhost:8080/persondb 
+  -d '{"salary":3500, "married":true, "profession":"gamer"}' \
+  http://localhost:8080/persons
 ###
-curl http://localhost:8080/persondb/aa715651-d339-45bb-83de-d2701b449094 \
+curl http://localhost:8080/persons/c4f21c39-2975-42f2-9686-abf4c2cf4750 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgxMzM0MDYsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.CaUIoxYy-BMH_IpoMuUtv3zvUdwoDmQn1DcC0pm3ePw"
+
 ###
 curl http://localhost:8080/persondb
 

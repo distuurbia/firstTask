@@ -18,17 +18,27 @@ definitions:
     - profession
     - salary
     type: object
-  model.User:
+  model.PersonRequest:
     properties:
-      ID:
+      married:
+        type: boolean
+      profession:
+        maxLength: 30
+        minLength: 3
         type: string
+      salary:
+        maximum: 100000
+        minimum: 100
+        type: integer
+    required:
+    - profession
+    - salary
+    type: object
+  model.UserRequest:
+    properties:
       password:
-        items:
-          type: integer
-        maxItems: 15
-        minItems: 4
-        type: array
-      refreshToken:
+        maxLength: 15
+        minLength: 4
         type: string
       username:
         maxLength: 15
@@ -38,6 +48,13 @@ definitions:
     - password
     - username
     type: object
+  service.TokenPair:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -45,31 +62,6 @@ info:
   title: FirstTask API
   version: "1.0"
 paths:
-  /entity:
-    post:
-      consumes:
-      - application/json
-      description: Creates a new entity
-      parameters:
-      - description: Entity data
-        in: body
-        name: entity
-        required: true
-        schema:
-          $ref: '#/definitions/model.Person'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.Person'
-        "400":
-          description: Bad Request
-          schema: {}
-      summary: Create a new entity
-      tags:
-      - Entity
   /images/download/{imageName}:
     get:
       consumes:
@@ -124,21 +116,19 @@ paths:
       - application/json
       description: Authenticates a user with the provided username and password
       parameters:
-      - description: Login information
+      - description: userRequest value (model.PersonRequest)
         in: body
-        name: loginInfo
+        name: userRequest
         required: true
         schema:
-          additionalProperties: true
-          type: object
+          $ref: '#/definitions/model.UserRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/service.TokenPair'
         "400":
           description: Bad Request
           schema: {}
@@ -150,6 +140,12 @@ paths:
       consumes:
       - application/json
       description: Get all persons
+      parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -163,12 +159,48 @@ paths:
           description: Bad Request
           schema: {}
       summary: Get all persons
+      tags:
+      - Person
+    post:
+      consumes:
+      - application/json
+      description: Creates a new person
+      parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: personRequest value (model.PersonRequest)
+        in: body
+        name: personRequest
+        required: true
+        schema:
+          $ref: '#/definitions/model.PersonRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Person'
+        "400":
+          description: Bad Request
+          schema: {}
+      summary: Create a new person
+      tags:
+      - Person
   /persons/{id}:
     delete:
       consumes:
       - application/json
       description: Delete a person by ID
       parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: Person ID
         in: path
         name: id
@@ -183,11 +215,18 @@ paths:
           description: Bad Request
           schema: {}
       summary: Delete a person by ID
+      tags:
+      - Person
     get:
       consumes:
       - application/json
       description: Get a person by ID
       parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: Person ID
         in: path
         name: id
@@ -204,22 +243,29 @@ paths:
           description: Bad Request
           schema: {}
       summary: Get a person by ID
+      tags:
+      - Person
     put:
       consumes:
       - application/json
       description: Update a person by ID
       parameters:
+      - description: Bearer token for authentication
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: Person ID
         in: path
         name: id
         required: true
         type: string
-      - description: Updated person object
+      - description: personRequest value (model.PersonRequest)
         in: body
-        name: person
+        name: personRequest
         required: true
         schema:
-          $ref: '#/definitions/model.Person'
+          $ref: '#/definitions/model.PersonRequest'
       produces:
       - application/json
       responses:
@@ -231,6 +277,8 @@ paths:
           description: Bad Request
           schema: {}
       summary: Update a person by ID
+      tags:
+      - Person
   /refresh:
     post:
       consumes:
@@ -249,28 +297,27 @@ paths:
       - application/json
       responses:
         "200":
-          description: Token pair
+          description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/service.TokenPair'
         "400":
           description: Bad Request
           schema: {}
       summary: Refreshes access and refresh tokens
       tags:
       - Authentication
-  /signup:
+  /signUp:
     post:
       consumes:
       - application/json
       description: Sign up a new user
       parameters:
-      - description: User object
+      - description: userRequest value (model.PersonRequest)
         in: body
-        name: user
+        name: userRequest
         required: true
         schema:
-          $ref: '#/definitions/model.User'
+          $ref: '#/definitions/model.UserRequest'
       produces:
       - application/json
       responses:
@@ -282,4 +329,6 @@ paths:
           description: Bad Request
           schema: {}
       summary: Sign up a new user
+      tags:
+      - User
 swagger: "2.0"
