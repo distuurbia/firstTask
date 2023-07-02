@@ -79,8 +79,8 @@ func (rdsStream *Redis) AddToStream(ctx context.Context, pers *model.Person) err
 // GetFromStream gets a person from the Redis Stream by ID
 func (rdsStream *Redis) GetFromStream(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 	streamData := redis.XReadArgs{
-		Streams: []string{"person_stream"},
-		Count:   1,
+		Streams: []string{"person_stream", "0"},
+		Count:   0,
 		Block:   0,
 	}
 	results, err := rdsStream.client.XRead(ctx, &streamData).Result()
@@ -90,21 +90,44 @@ func (rdsStream *Redis) GetFromStream(ctx context.Context, id uuid.UUID) (*model
 	if len(results) == 0 || len(results[0].Messages) == 0 {
 		return nil, redis.Nil
 	}
-	persJSON := results[0].Messages[0].Values["data"].(string)
 	var pers model.Person
-	err = json.Unmarshal([]byte(persJSON), &pers)
-	if err != nil {
-		return nil, fmt.Errorf("RedisStreamRepository -> GetFromStream -> json.Unmarshal -> error: %w", err)
+	var persJSON string
+	for _, msg := range results[0].Messages {
+		if msg.Values["MyID"] == id.String(){
+			persJSON = msg.Values["data"].(string)
+			err = json.Unmarshal([]byte(persJSON), &pers)
+			if err != nil {
+				return nil, fmt.Errorf("RedisStreamRepository -> GetFromStream -> json.Unmarshal -> error: %w", err)
+			}
+			return &pers, nil
+		}
 	}
-	return &pers, nil
+	return nil, redis.Nil
 }
 
 // DeleteFromStream deletes a person from the Redis Stream by ID
 func (rdsStream *Redis) DeleteFromStream(ctx context.Context, id uuid.UUID) error {
-	_, err := rdsStream.client.XDel(ctx, "person_stream", id.String()).Result()
+	streamData := redis.XReadArgs{
+		Streams: []string{"person_stream", "0"},
+		Count:   0,
+		Block:   0,
+	}
+	results, err := rdsStream.client.XRead(ctx, &streamData).Result()
+	if err != nil {
+		return fmt.Errorf("RedisStreamRepository -> GetFromStream -> XRead -> error: %w", err)
+	}
+	if len(results) == 0 || len(results[0].Messages) == 0 {
+		return redis.Nil
+	}
+	var msgID string
+	for _, msg := range results[0].Messages {
+		if msg.Values["MyID"] == id.String(){
+			msgID = msg.ID
+		}
+	}
+	_, err = rdsStream.client.XDel(ctx, "person_stream", msgID).Result()
 	if err != nil {
 		return fmt.Errorf("RedisStreamRepository -> DeleteFromStream -> XDel -> error: %w", err)
 	}
 	return nil
 }
-

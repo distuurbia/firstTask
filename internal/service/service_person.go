@@ -27,6 +27,7 @@ type PersonRedisRepository interface {
 	AddToStream(ctx context.Context, pers *model.Person) error
 	GetFromStream(ctx context.Context, id uuid.UUID) (*model.Person, error)
 	DeleteFromStream(ctx context.Context, id uuid.UUID) error
+	// UpdateToStream(ctx context.Context, pers *model.Person) error
 }
 
 // PersonService contains Repository interface
@@ -56,7 +57,7 @@ func (srv *PersonService) Create(ctx context.Context, pers *model.Person) error 
 // ReadRow is a method of PersonService that calls ReadRow method of Repository
 func (srv *PersonService) ReadRow(ctx context.Context, id uuid.UUID) (*model.Person, error) {
 	pers, err := srv.persRdsRps.GetFromStream(ctx, id)
-	if err != nil && err != redis.Nil {
+	if err != nil && err.Error() != redis.Nil.Error() {
 		return nil, fmt.Errorf("PersonService -> ReadRow -> persRdsRps.Get -> error: %w", err)
 	}
 	if pers == nil {
@@ -64,7 +65,7 @@ func (srv *PersonService) ReadRow(ctx context.Context, id uuid.UUID) (*model.Per
 		if err != nil {
 			return nil, fmt.Errorf("PersonService -> ReadRow -> persRps.ReadRow -> error: %w", err)
 		}
-		err = srv.persRdsRps.Set(ctx, pers)
+		err = srv.persRdsRps.AddToStream(ctx, pers)
 		if err != nil && err != redis.Nil {
 			return nil, fmt.Errorf("PersonService -> ReadRow -> persRdsRps.Set -> error: %w", err)
 		}
@@ -78,9 +79,13 @@ func (srv *PersonService) Update(ctx context.Context, pers *model.Person) error 
 	if err != nil {
 		return fmt.Errorf("PersonService -> Update -> persRps -> Update -> error: %w", err)
 	}
+	err = srv.persRdsRps.DeleteFromStream(ctx, pers.ID)
+	if err != nil && err.Error() != redis.Nil.Error(){
+		return fmt.Errorf("PersonService -> Update -> persRdsRps.DeleteFromStream -> error: %w", err)
+	}
 	err = srv.persRdsRps.AddToStream(ctx, pers)
 	if err != nil {
-		return fmt.Errorf("PersonService -> Update -> persRdsRps.Set -> error: %w", err)
+		return fmt.Errorf("PersonService -> Update -> persRdsRps.AddToStream -> error: %w", err)
 	}
 	return nil
 }
@@ -91,8 +96,8 @@ func (srv PersonService) Delete(ctx context.Context, id uuid.UUID) error {
 	if err != nil {
 		return fmt.Errorf("PersonService -> Delete -> persRps.Delete -> error: %w", err)
 	}
-	err = srv.persRdsRps.DeleteFromStream(ctx, id)
-	if err != nil {
+	_ = srv.persRdsRps.DeleteFromStream(ctx, id)
+	if err != nil && err.Error() != redis.Nil.Error(){
 		return fmt.Errorf("PersonService -> Delete -> persRdsRps.Delete -> error: %w", err)
 	}
 	return nil

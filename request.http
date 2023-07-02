@@ -1,12 +1,12 @@
 
 curl -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgxMzM0MDYsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.CaUIoxYy-BMH_IpoMuUtv3zvUdwoDmQn1DcC0pm3ePw" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgzMjgxNjQsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.e-x75xIqGFXuD7K9kvIJIpsEESvA5hBx_QHM7taTyQ0" \
   -X POST \
-  -d '{"salary":3500, "married":true, "profession":"gamer"}' \
+  -d '{"salary":7777, "married":true, "profession":"ratatatata"}' \
   http://localhost:8080/persons
 ###
-curl http://localhost:8080/persons/c4f21c39-2975-42f2-9686-abf4c2cf4750 \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgxMzM0MDYsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.CaUIoxYy-BMH_IpoMuUtv3zvUdwoDmQn1DcC0pm3ePw"
+curl http://localhost:8080/persons/51963429-fb48-4784-8773-ef25ff5f8b70 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgzMjgxNjQsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.e-x75xIqGFXuD7K9kvIJIpsEESvA5hBx_QHM7taTyQ0"
 
 ###
 curl http://localhost:8080/persondb
@@ -14,12 +14,13 @@ curl http://localhost:8080/persondb
 ###
 curl -X PUT \
   -H 'Content-Type: application/json' \
-  # -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODc3MTUyMDJ9.PD_t4lx8gDfjfMrlXDkYq_dwxt30F7ZtTSrRwEsIZRs" \
-  -d '{"Salary":2000, "Married":true, "Profession":"trainer"}' \
-  http://localhost:8080/persondb/ebd74a3d-2dc3-4642-aa2e-384499a98d1c
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgzMjgxNjQsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.e-x75xIqGFXuD7K9kvIJIpsEESvA5hBx_QHM7taTyQ0" \
+  -d '{"Salary":8888, "Married":false, "Profession":"trainer"}' \
+  http://localhost:8080/persons/51963429-fb48-4784-8773-ef25ff5f8b70
 ###
 
-curl -X DELETE http://localhost:8080/persondb/a8fe07da-2e75-41fe-a7fb-4974e9f5a8da
+curl -X DELETE http://localhost:8080/persons/007a8f4d-3a27-48b0-bb3b-f555c851143d \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODgzMjgxNjQsImlkIjoiOWE4YzFmMmItNDg2OC00ODI1LTgwZjUtMTZmNDg2OWEzNTU0In0.e-x75xIqGFXuD7K9kvIJIpsEESvA5hBx_QHM7taTyQ0"
 
 ###
 curl -X POST \

@@ -168,7 +168,7 @@ func (handl *EntityHandler) Update(c echo.Context) error {
 // @Produce json
 // @Param Authorization header string true "Bearer token for authentication"
 // @Param id path string true "Person ID"
-// @Success 204
+// @Success 200 {string} string
 // @Failure 400 {object} error
 // @Router /persons/{id} [delete]
 func (handl *EntityHandler) Delete(c echo.Context) error {
@@ -183,7 +183,7 @@ func (handl *EntityHandler) Delete(c echo.Context) error {
 		logrus.Errorf("EntityHandler -> Delete -> srvcPers.Delete -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "falled to delete check if id is UUID format or that such person exist")
 	}
-	return c.NoContent(http.StatusNoContent)
+	return c.JSON(http.StatusOK, "Deleted: " + id)
 }
 
 // SignUp calls SignUp method of Service by handler
@@ -268,7 +268,7 @@ func (handl *EntityHandler) Login(c echo.Context) error {
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body map[string]interface{} true "Refresh token"
+// @Param refreshRequest body model.RefreshRequest true "refreshRequest value (model.RefreshRequest)"
 // @Success 200 {object} service.TokenPair
 // @Failure 400 {object} error
 // @Router /refresh [post]
@@ -305,7 +305,7 @@ func (handl *EntityHandler) Refresh(c echo.Context) error {
 // @Param imageName path string true "Image filename"
 // @Success 200 {file} octet-stream "Image file"
 // @Failure 404 {object} error
-// @Router /images/download/{imageName} [get]
+// @Router /downloadImage/{imageName} [get]
 func (handl *EntityHandler) DownloadImage(c echo.Context) error {
 	imgName := c.Param("imageName")
 	imgPath := "images/download/" + imgName
@@ -343,7 +343,7 @@ func (handl *EntityHandler) DownloadImage(c echo.Context) error {
 // @Param image formData file true "Image file"
 // @Success 200 {string} string "OK"
 // @Failure 404 {object} error
-// @Router /images/upload [post]
+// @Router /uploadImage [post]
 func (handl *EntityHandler) UploadImage(c echo.Context) error {
 	image, err := c.FormFile("image")
 	if err != nil {

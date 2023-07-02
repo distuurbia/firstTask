@@ -81,10 +81,11 @@ func main() {
 	rds := repository.NewRepositoryRedis(rdsClient)
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
 	var dbChoose int
-	_, err := fmt.Scan(&dbChoose)
-	if err != nil {
-		fmt.Println("failed to scan")
-	}
+	// _, err := fmt.Scan(&dbChoose)
+	// if err != nil {
+	// 	fmt.Println("failed to scan")
+	// }
+	dbChoose = 1
 	const PostgreSQL = 1
 	const MongoDB = 2
 	switch dbChoose {

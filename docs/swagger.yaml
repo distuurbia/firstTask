@@ -34,6 +34,13 @@ definitions:
     - profession
     - salary
     type: object
+  model.RefreshRequest:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
   model.UserRequest:
     properties:
       password:
@@ -62,7 +69,7 @@ info:
   title: FirstTask API
   version: "1.0"
 paths:
-  /images/download/{imageName}:
+  /downloadImage/{imageName}:
     get:
       consumes:
       - application/json
@@ -84,30 +91,6 @@ paths:
           description: Not Found
           schema: {}
       summary: Download an image
-      tags:
-      - Images
-  /images/upload:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Uploads an image to the server
-      parameters:
-      - description: Image file
-        in: formData
-        name: image
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "404":
-          description: Not Found
-          schema: {}
-      summary: Upload an image
       tags:
       - Images
   /login:
@@ -209,8 +192,10 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+          schema:
+            type: string
         "400":
           description: Bad Request
           schema: {}
@@ -286,13 +271,12 @@ paths:
       description: Refreshes the access and refresh tokens using the provided refresh
         token
       parameters:
-      - description: Refresh token
+      - description: refreshRequest value (model.RefreshRequest)
         in: body
-        name: request
+        name: refreshRequest
         required: true
         schema:
-          additionalProperties: true
-          type: object
+          $ref: '#/definitions/model.RefreshRequest'
       produces:
       - application/json
       responses:
@@ -331,4 +315,28 @@ paths:
       summary: Sign up a new user
       tags:
       - User
+  /uploadImage:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads an image to the server
+      parameters:
+      - description: Image file
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema: {}
+      summary: Upload an image
+      tags:
+      - Images
 swagger: "2.0"

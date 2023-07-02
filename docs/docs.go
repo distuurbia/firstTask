@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/images/download/{imageName}": {
+        "/downloadImage/{imageName}": {
             "get": {
                 "description": "Downloads the specified image from the server",
                 "consumes": [
@@ -43,42 +43,6 @@ const docTemplate = `{
                         "description": "Image file",
                         "schema": {
                             "type": "file"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {}
-                    }
-                }
-            }
-        },
-        "/images/upload": {
-            "post": {
-                "description": "Uploads an image to the server",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Images"
-                ],
-                "summary": "Upload an image",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Image file",
-                        "name": "image",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
                         }
                     },
                     "404": {
@@ -329,8 +293,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -354,13 +321,12 @@ const docTemplate = `{
                 "summary": "Refreshes access and refresh tokens",
                 "parameters": [
                     {
-                        "description": "Refresh token",
-                        "name": "request",
+                        "description": "refreshRequest value (model.RefreshRequest)",
+                        "name": "refreshRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/model.RefreshRequest"
                         }
                     }
                 ],
@@ -415,6 +381,42 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/uploadImage": {
+            "post": {
+                "description": "Uploads an image to the server",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Images"
+                ],
+                "summary": "Upload an image",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image file",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {}
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -462,6 +464,17 @@ const docTemplate = `{
                     "type": "integer",
                     "maximum": 100000,
                     "minimum": 100
+                }
+            }
+        },
+        "model.RefreshRequest": {
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
                 }
             }
         },
