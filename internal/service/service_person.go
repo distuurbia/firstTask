@@ -80,7 +80,7 @@ func (srv *PersonService) Update(ctx context.Context, pers *model.Person) error 
 		return fmt.Errorf("PersonService -> Update -> persRps -> Update -> error: %w", err)
 	}
 	err = srv.persRdsRps.DeleteFromStream(ctx, pers.ID)
-	if err != nil && err.Error() != redis.Nil.Error(){
+	if err != nil && err.Error() != redis.Nil.Error() {
 		return fmt.Errorf("PersonService -> Update -> persRdsRps.DeleteFromStream -> error: %w", err)
 	}
 	err = srv.persRdsRps.AddToStream(ctx, pers)
@@ -97,7 +97,7 @@ func (srv PersonService) Delete(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("PersonService -> Delete -> persRps.Delete -> error: %w", err)
 	}
 	_ = srv.persRdsRps.DeleteFromStream(ctx, id)
-	if err != nil && err.Error() != redis.Nil.Error(){
+	if err != nil && err.Error() != redis.Nil.Error() {
 		return fmt.Errorf("PersonService -> Delete -> persRdsRps.Delete -> error: %w", err)
 	}
 	return nil

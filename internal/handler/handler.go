@@ -183,7 +183,7 @@ func (handl *EntityHandler) Delete(c echo.Context) error {
 		logrus.Errorf("EntityHandler -> Delete -> srvcPers.Delete -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "falled to delete check if id is UUID format or that such person exist")
 	}
-	return c.JSON(http.StatusOK, "Deleted: " + id)
+	return c.JSON(http.StatusOK, "Deleted: "+id)
 }
 
 // SignUp calls SignUp method of Service by handler

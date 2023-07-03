@@ -1,5 +1,14 @@
 version: "3.9"
 services:
+  first-task:
+    build: .
+    environment:
+      SECRET_KEY: "roapjumping"
+      PGX_CONN_STRING: "postgres://personuser:minovich12@postgres:5432/persondb"
+    ports:
+      - 8080:8080
+    networks:
+      - my-network
   postgres:
     image: postgres:13.3
     environment:
@@ -7,4 +16,18 @@ services:
       POSTGRES_USER: "personuser"
       POSTGRES_PASSWORD: "minovich12"
     ports:
-      - "5432:5432"
+      - 5432:5432
+    networks:
+      - my-network
+  redis:
+    image: redis
+    environment:
+      REDIS_PASSWORD: "minovich12"
+      REDIS_USERNAME: "redisUser"
+    ports:
+      - 6379:6379
+    networks:
+      - my-network
+
+networks:
+  my-network:
