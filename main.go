@@ -60,13 +60,17 @@ func ConnectMongo() (*mongo.Client, error) {
 }
 
 // ConnectRedis connects to the redis db
-func ConnectRedis() *redis.Client {
+func ConnectRedis() (*redis.Client, error) {
+	var cfg config.Config
+	if err := env.Parse(&cfg); err != nil {
+		return nil, err
+	}
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "minovich12",
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
 		DB:       0,
 	})
-	return client
+	return client, nil
 }
 
 // @title FirstTask API
@@ -77,7 +81,11 @@ func ConnectRedis() *redis.Client {
 func main() {
 	var handl *handler.EntityHandler
 	validate := validator.New()
-	rdsClient := ConnectRedis()
+	rdsClient, err := ConnectRedis()
+	if err != nil {
+		//nolint:gocritic
+		log.Fatal("could not connect redis: ", err)
+	}
 	rds := repository.NewRepositoryRedis(rdsClient)
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
 	var dbChoose int
@@ -119,6 +127,7 @@ func main() {
 		//nolint:gocritic
 		log.Fatal("The wrong number!")
 	}
+
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
