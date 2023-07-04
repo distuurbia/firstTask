@@ -8,7 +8,6 @@ import (
 
 	"fmt"
 
-	"github.com/caarlos0/env/v8"
 	"github.com/distuurbia/firstTask/internal/config"
 	"github.com/distuurbia/firstTask/internal/middleware"
 	"github.com/distuurbia/firstTask/internal/model"
@@ -28,11 +27,12 @@ type UserRepository interface {
 // UserService contains UserRepository interface
 type UserService struct {
 	rpsUser UserRepository
+	cfg     *config.Config
 }
 
 // NewUserService accepts UserRepository object and returnes an object of type *UserService
-func NewUserService(rpsUser UserRepository) *UserService {
-	return &UserService{rpsUser: rpsUser}
+func NewUserService(rpsUser UserRepository, cfg *config.Config) *UserService {
+	return &UserService{rpsUser: rpsUser, cfg: cfg}
 }
 
 // Expiration time for an access and a refresh tokens
@@ -126,26 +126,31 @@ func (srvUser *UserService) Refresh(ctx context.Context, tokenPair TokenPair) (T
 
 // TokensIDCompare compares IDs from refresh and access token for being equal
 func (srvUser *UserService) TokensIDCompare(tokenPair TokenPair) (uuid.UUID, error) {
-	var cfg config.Config
-	if err := env.Parse(&cfg); err != nil {
-		return uuid.Nil, err
-	}
-	accessToken, err := middleware.ValidateToken(tokenPair.AccessToken, cfg.SecretKey)
+	accessToken, err := middleware.ValidateToken(tokenPair.AccessToken, srvUser.cfg.SecretKey)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> accessToken -> middleware -> ValidateToken")
+		return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> accessToken -> middleware -> ValidateToken -> error: %w", err)
 	}
 	var accessID uuid.UUID
+	var uuidID uuid.UUID
 	if claims, ok := accessToken.Claims.(jwt.MapClaims); ok && accessToken.Valid {
-		accessID = uuid.MustParse(claims["id"].(string))
+		uuidID, err = uuid.Parse(claims["id"].(string))
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> accessToken -> uuid.Parse -> error: %w", err)
+		}
+		accessID = uuidID
 	}
-	refreshToken, err := middleware.ValidateToken(tokenPair.RefreshToken, cfg.SecretKey)
+	refreshToken, err := middleware.ValidateToken(tokenPair.RefreshToken, srvUser.cfg.SecretKey)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> refreshToken -> middleware -> ValidateToken")
+		return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> refreshToken -> middleware -> ValidateToken -> error: %w", err)
 	}
 	var refreshID uuid.UUID
 	if claims, ok := refreshToken.Claims.(jwt.MapClaims); ok && refreshToken.Valid {
 		exp := claims["exp"].(float64)
-		refreshID = uuid.MustParse(claims["id"].(string))
+		uuidID, err = uuid.Parse(claims["id"].(string))
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("ServiceUser -> TokensIDCompare -> accessToken  -> uuid.Parse -> error: %w", err)
+		}
+		refreshID = uuidID
 		if exp < float64(time.Now().Unix()) {
 			return uuid.Nil, fmt.Errorf("ServiceUser ->  TokensIDCompare -> middleware -> ValidateToken -> error: %w", err)
 		}
@@ -192,16 +197,12 @@ func (srvUser *UserService) GenerateTokenPair(id uuid.UUID) (TokenPair, error) {
 
 // GenerateJWTToken is a method of ServiceUser that generate JWT token with given expiration with user id
 func (srvUser *UserService) GenerateJWTToken(expiration time.Duration, id uuid.UUID) (string, error) {
-	var cfg config.Config
-	if err := env.Parse(&cfg); err != nil {
-		return "", err
-	}
 	claims := &jwt.MapClaims{
 		"exp": time.Now().Add(expiration).Unix(),
 		"id":  id,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(cfg.SecretKey))
+	tokenString, err := token.SignedString([]byte(srvUser.cfg.SecretKey))
 	if err != nil {
 		return "", fmt.Errorf("ServiceUser -> GenerateJWTToken -> token.SignedString -> error: %w", err)
 	}

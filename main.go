@@ -26,12 +26,7 @@ import (
 )
 
 // ConnectPgx connects to the pgxpool
-func ConnectPgx() (*pgxpool.Pool, error) {
-	cfg := config.Config{}
-	err := env.Parse(&cfg)
-	if err != nil {
-		return nil, err
-	}
+func ConnectPgx(cfg *config.Config) (*pgxpool.Pool, error) {
 	cfgPgx, err := pgxpool.ParseConfig(cfg.PgxConnectionString)
 	if err != nil {
 		return nil, err
@@ -44,11 +39,7 @@ func ConnectPgx() (*pgxpool.Pool, error) {
 }
 
 // ConnectMongo connects to the mongoDB
-func ConnectMongo() (*mongo.Client, error) {
-	var cfg config.Config
-	if err := env.Parse(&cfg); err != nil {
-		return nil, err
-	}
+func ConnectMongo(cfg *config.Config) (*mongo.Client, error) {
 	const ctxTimeout = 10
 	ctx, cancel := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
 	defer cancel()
@@ -60,17 +51,13 @@ func ConnectMongo() (*mongo.Client, error) {
 }
 
 // ConnectRedis connects to the redis db
-func ConnectRedis() (*redis.Client, error) {
-	var cfg config.Config
-	if err := env.Parse(&cfg); err != nil {
-		return nil, err
-	}
+func ConnectRedis(cfg *config.Config) *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:     cfg.RedisAddress,
 		Password: cfg.RedisPassword,
 		DB:       0,
 	})
-	return client, nil
+	return client
 }
 
 // @title FirstTask API
@@ -78,14 +65,18 @@ func ConnectRedis() (*redis.Client, error) {
 // @version 1.0
 // @host localhost:8080
 // @BasePath /
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
+	var cfg config.Config
+	if err := env.Parse(&cfg); err != nil {
+		//nolint:gocritic
+		log.Fatal("could not parse config: ", err)
+	}
 	var handl *handler.EntityHandler
 	validate := validator.New()
-	rdsClient, err := ConnectRedis()
-	if err != nil {
-		//nolint:gocritic
-		log.Fatal("could not connect redis: ", err)
-	}
+	rdsClient := ConnectRedis(&cfg)
 	rds := repository.NewRepositoryRedis(rdsClient)
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
 	var dbChoose int
@@ -98,24 +89,24 @@ func main() {
 	const MongoDB = 2
 	switch dbChoose {
 	case PostgreSQL:
-		dbpool, err := ConnectPgx()
+		dbpool, err := ConnectPgx(&cfg)
 		if err != nil {
 			log.Fatal("could not construct the pool: ", err)
 		}
 		defer dbpool.Close()
 		persPgx := repository.NewRepositoryPgx(dbpool)
 		persSrv := service.NewPersonService(persPgx, rds)
-		userSrv := service.NewUserService(persPgx)
+		userSrv := service.NewUserService(persPgx, &cfg)
 		handl = handler.NewHandler(persSrv, userSrv, validate)
 	case MongoDB:
-		client, err := ConnectMongo()
+		client, err := ConnectMongo(&cfg)
 		if err != nil {
 			//nolint:gocritic
 			log.Fatal("could not construct the client: ", err)
 		}
 		rpsMongo := repository.NewRepositoryMongo(client)
 		srvPers := service.NewPersonService(rpsMongo, rds)
-		srvUser := service.NewUserService(rpsMongo)
+		srvUser := service.NewUserService(rpsMongo, &cfg)
 		handl = handler.NewHandler(srvPers, srvUser, validate)
 		defer func() {
 			if err = client.Disconnect(context.Background()); err != nil {
@@ -132,11 +123,11 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.POST("/persons", handl.Create, customMidleware.JWTMiddleware())
-	e.GET("/persons/:id", handl.ReadRow, customMidleware.JWTMiddleware())
-	e.GET("/persons", handl.GetAll, customMidleware.JWTMiddleware())
-	e.PUT("/persons/:id", handl.Update, customMidleware.JWTMiddleware())
-	e.DELETE("/persons/:id", handl.Delete, customMidleware.JWTMiddleware())
+	e.POST("/persons", handl.Create, customMidleware.JWTMiddleware(&cfg))
+	e.GET("/persons/:id", handl.ReadRow, customMidleware.JWTMiddleware(&cfg))
+	e.GET("/persons", handl.GetAll, customMidleware.JWTMiddleware(&cfg))
+	e.PUT("/persons/:id", handl.Update, customMidleware.JWTMiddleware(&cfg))
+	e.DELETE("/persons/:id", handl.Delete, customMidleware.JWTMiddleware(&cfg))
 
 	e.POST("/signUp", handl.SignUp)
 	e.POST("/login", handl.Login)

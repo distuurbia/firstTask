@@ -2,24 +2,6 @@ basePath: /
 definitions:
   model.Person:
     properties:
-      ID:
-        type: string
-      married:
-        type: boolean
-      profession:
-        maxLength: 30
-        minLength: 3
-        type: string
-      salary:
-        maximum: 100000
-        minimum: 100
-        type: integer
-    required:
-    - profession
-    - salary
-    type: object
-  model.PersonRequest:
-    properties:
       married:
         type: boolean
       profession:
@@ -99,9 +81,9 @@ paths:
       - application/json
       description: Authenticates a user with the provided username and password
       parameters:
-      - description: userRequest value (model.PersonRequest)
+      - description: user value (model.UserRequest)
         in: body
-        name: userRequest
+        name: user
         required: true
         schema:
           $ref: '#/definitions/model.UserRequest'
@@ -123,12 +105,6 @@ paths:
       consumes:
       - application/json
       description: Get all persons
-      parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -141,6 +117,8 @@ paths:
         "400":
           description: Bad Request
           schema: {}
+      security:
+      - ApiKeyAuth: []
       summary: Get all persons
       tags:
       - Person
@@ -149,17 +127,12 @@ paths:
       - application/json
       description: Creates a new person
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: personRequest value (model.PersonRequest)
+      - description: person value (model.Person)
         in: body
-        name: personRequest
+        name: person
         required: true
         schema:
-          $ref: '#/definitions/model.PersonRequest'
+          $ref: '#/definitions/model.Person'
       produces:
       - application/json
       responses:
@@ -170,6 +143,8 @@ paths:
         "400":
           description: Bad Request
           schema: {}
+      security:
+      - ApiKeyAuth: []
       summary: Create a new person
       tags:
       - Person
@@ -179,11 +154,6 @@ paths:
       - application/json
       description: Delete a person by ID
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Person ID
         in: path
         name: id
@@ -199,6 +169,8 @@ paths:
         "400":
           description: Bad Request
           schema: {}
+      security:
+      - ApiKeyAuth: []
       summary: Delete a person by ID
       tags:
       - Person
@@ -207,11 +179,6 @@ paths:
       - application/json
       description: Get a person by ID
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Person ID
         in: path
         name: id
@@ -227,6 +194,8 @@ paths:
         "400":
           description: Bad Request
           schema: {}
+      security:
+      - ApiKeyAuth: []
       summary: Get a person by ID
       tags:
       - Person
@@ -235,22 +204,17 @@ paths:
       - application/json
       description: Update a person by ID
       parameters:
-      - description: Bearer token for authentication
-        in: header
-        name: Authorization
-        required: true
-        type: string
       - description: Person ID
         in: path
         name: id
         required: true
         type: string
-      - description: personRequest value (model.PersonRequest)
+      - description: person value (model.Person)
         in: body
-        name: personRequest
+        name: person
         required: true
         schema:
-          $ref: '#/definitions/model.PersonRequest'
+          $ref: '#/definitions/model.Person'
       produces:
       - application/json
       responses:
@@ -261,6 +225,8 @@ paths:
         "400":
           description: Bad Request
           schema: {}
+      security:
+      - ApiKeyAuth: []
       summary: Update a person by ID
       tags:
       - Person
@@ -296,9 +262,9 @@ paths:
       - application/json
       description: Sign up a new user
       parameters:
-      - description: userRequest value (model.PersonRequest)
+      - description: user value (model.UserRequest)
         in: body
-        name: userRequest
+        name: user
         required: true
         schema:
           $ref: '#/definitions/model.UserRequest'
@@ -339,4 +305,9 @@ paths:
       summary: Upload an image
       tags:
       - Images
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

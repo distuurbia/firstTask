@@ -14,7 +14,7 @@ import (
 )
 
 // JWTMiddleware makes an authorization through access token
-func JWTMiddleware() echo.MiddlewareFunc {
+func JWTMiddleware(cfg *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
@@ -26,7 +26,6 @@ func JWTMiddleware() echo.MiddlewareFunc {
 			if tokenString == "" {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
 			}
-			var cfg config.Config
 			if err := env.Parse(&cfg); err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid env")
 			}

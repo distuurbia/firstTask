@@ -46,12 +46,12 @@ func NewHandler(srvcPers PersonService, srvcUser UserService, validate *validato
 
 // Create calls Create method of Service by handler
 // @Summary Create a new person
+// @Security ApiKeyAuth
 // @Description Creates a new person
 // @Tags Person
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token for authentication"
-// @Param personRequest body model.PersonRequest true "personRequest value (model.PersonRequest)"
+// @Param person body model.Person true "person value (model.Person)"
 // @Success 201 {object} model.Person
 // @Failure 400 {object} error
 // @Router /persons [post]
@@ -70,7 +70,12 @@ func (handl *EntityHandler) Create(c echo.Context) error {
 	}
 	err = handl.srvcPers.Create(c.Request().Context(), &createdPerson)
 	if err != nil {
-		logrus.Errorf("EntityHandler -> Create -> srvcPers.Create -> error: %v", err)
+		logrus.WithFields(logrus.Fields{
+			"ID":         createdPerson.ID,
+			"Salary":     createdPerson.Salary,
+			"Married":    createdPerson.Married,
+			"Profession": createdPerson.Profession,
+		}).Errorf("EntityHandler -> Create -> srvcPers.Create -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to create check if id is UUID format")
 	}
 	return c.JSON(http.StatusCreated, createdPerson)
@@ -78,11 +83,11 @@ func (handl *EntityHandler) Create(c echo.Context) error {
 
 // ReadRow calls ReadRow method of Service by handler
 // @Summary Get a person by ID
+// @Security ApiKeyAuth
 // @Description Get a person by ID
 // @Tags Person
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token for authentication"
 // @Param id path string true "Person ID"
 // @Success 200 {object} model.Person
 // @Failure 400 {object} error
@@ -94,9 +99,14 @@ func (handl *EntityHandler) ReadRow(c echo.Context) error {
 		logrus.Errorf("EntityHandler -> ReadRow -> validate -> VarCtx -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to valid id")
 	}
-	readPerson, err := handl.srvcPers.ReadRow(c.Request().Context(), uuid.MustParse(id))
+	uuidID, err := uuid.Parse(id)
 	if err != nil {
-		logrus.Errorf("EntityHandler -> ReadRow -> srvcPers.ReadRow -> error: %v", err)
+		logrus.Errorf("EntityHandler -> ReadRow -> uuid.Parse -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to parse id")
+	}
+	readPerson, err := handl.srvcPers.ReadRow(c.Request().Context(), uuidID)
+	if err != nil {
+		logrus.WithField("ID", uuidID).Errorf("EntityHandler -> ReadRow -> srvcPers.ReadRow -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to read check if id is UUID format or that such person exist")
 	}
 	return c.JSON(http.StatusOK, readPerson)
@@ -104,11 +114,11 @@ func (handl *EntityHandler) ReadRow(c echo.Context) error {
 
 // GetAll calls GetAll method of Service by handler
 // @Summary Get all persons
+// @Security ApiKeyAuth
 // @Description Get all persons
 // @Tags Person
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token for authentication"
 // @Success 200 {array} model.Person
 // @Failure 400 {object} error
 // @Router /persons [get]
@@ -123,13 +133,13 @@ func (handl *EntityHandler) GetAll(c echo.Context) error {
 
 // Update calls Update method of Service by handler
 // @Summary Update a person by ID
+// @Security ApiKeyAuth
 // @Description Update a person by ID
 // @Tags Person
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token for authentication"
 // @Param id path string true "Person ID"
-// @Param personRequest body model.PersonRequest true "personRequest value (model.PersonRequest)"
+// @Param person body model.Person true "person value (model.Person)"
 // @Success 200 {object} model.Person
 // @Failure 400 {object} error
 // @Router /persons/{id} [put]
@@ -141,7 +151,12 @@ func (handl *EntityHandler) Update(c echo.Context) error {
 		logrus.Errorf("EntityHandler -> Update -> validate -> VarCtx -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to valid id")
 	}
-	updatedPerson.ID = uuid.MustParse(id)
+	uuidID, err := uuid.Parse(id)
+	if err != nil {
+		logrus.Errorf("EntityHandler -> Update -> uuid.Parse -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to parse id")
+	}
+	updatedPerson.ID = uuidID
 	err = c.Bind(&updatedPerson)
 	if err != nil {
 		logrus.Errorf("EntityHandler -> Update -> c.Bind -> error: %v", err)
@@ -154,7 +169,12 @@ func (handl *EntityHandler) Update(c echo.Context) error {
 	}
 	err = handl.srvcPers.Update(c.Request().Context(), &updatedPerson)
 	if err != nil {
-		logrus.Errorf("EntityHandler -> Update -> srvcPers.Update -> error: %v", err)
+		logrus.WithFields(logrus.Fields{
+			"ID":         updatedPerson.ID,
+			"Salary":     updatedPerson.Salary,
+			"Married":    updatedPerson.Married,
+			"Profession": updatedPerson.Profession,
+		}).Errorf("EntityHandler -> Update -> srvcPers.Update -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to update check if id is UUID format or that such person exist")
 	}
 	return c.JSON(http.StatusOK, updatedPerson)
@@ -162,11 +182,11 @@ func (handl *EntityHandler) Update(c echo.Context) error {
 
 // Delete calls Delete method of Service by handler
 // @Summary Delete a person by ID
+// @Security ApiKeyAuth
 // @Description Delete a person by ID
 // @Tags Person
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer token for authentication"
 // @Param id path string true "Person ID"
 // @Success 200 {string} string
 // @Failure 400 {object} error
@@ -178,9 +198,14 @@ func (handl *EntityHandler) Delete(c echo.Context) error {
 		logrus.Errorf("EntityHandler -> Update -> validate -> VarCtx -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to valid id")
 	}
-	err = handl.srvcPers.Delete(c.Request().Context(), uuid.MustParse(id))
+	uuidID, err := uuid.Parse(id)
 	if err != nil {
-		logrus.Errorf("EntityHandler -> Delete -> srvcPers.Delete -> error: %v", err)
+		logrus.Errorf("EntityHandler -> Delete -> uuid.Parse -> error: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to parse id")
+	}
+	err = handl.srvcPers.Delete(c.Request().Context(), uuidID)
+	if err != nil {
+		logrus.WithField("ID", uuidID).Errorf("EntityHandler -> Delete -> srvcPers.Delete -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "falled to delete check if id is UUID format or that such person exist")
 	}
 	return c.JSON(http.StatusOK, "Deleted: "+id)
@@ -192,7 +217,7 @@ func (handl *EntityHandler) Delete(c echo.Context) error {
 // @Tags User
 // @Accept json
 // @Produce json
-// @Param userRequest body model.UserRequest true "userRequest value (model.PersonRequest)"
+// @Param user body model.UserRequest true "user value (model.UserRequest)"
 // @Success 201 {string} string
 // @Failure 400 {object} error
 // @Router /signUp [post]
@@ -217,7 +242,12 @@ func (handl *EntityHandler) SignUp(c echo.Context) error {
 	}
 	err = handl.srvcUser.SignUp(c.Request().Context(), &createdUser)
 	if err != nil {
-		logrus.Errorf("EntityHandler -> SignUp -> srvcUser.SignUp -> error: %v", err)
+		logrus.WithFields(logrus.Fields{
+			"ID":           createdUser.ID,
+			"Username":     createdUser.Username,
+			"Password":     createdUser.Password,
+			"RefreshToken": createdUser.RefreshToken,
+		}).Errorf("EntityHandler -> SignUp -> srvcUser.SignUp -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to signUp")
 	}
 	return c.JSON(http.StatusCreated, "ID: "+createdUser.ID.String())
@@ -229,7 +259,7 @@ func (handl *EntityHandler) SignUp(c echo.Context) error {
 // @Tags User
 // @Accept json
 // @Produce json
-// @Param userRequest body model.UserRequest true "userRequest value (model.PersonRequest)"
+// @Param user body model.UserRequest true "user value (model.UserRequest)"
 // @Success 200 {object} service.TokenPair
 // @Failure 400 {object} error
 // @Router /login [post]
@@ -253,7 +283,12 @@ func (handl *EntityHandler) Login(c echo.Context) error {
 	}
 	tokenPair, err := handl.srvcUser.Login(c.Request().Context(), &loginedUser)
 	if err != nil {
-		logrus.Errorf("EntityHandler -> Login -> srvcUser.Login -> error: %v", err)
+		logrus.WithFields(logrus.Fields{
+			"ID":           loginedUser.ID,
+			"Username":     loginedUser.Username,
+			"Password":     loginedUser.Password,
+			"RefreshToken": loginedUser.RefreshToken,
+		}).Errorf("EntityHandler -> Login -> srvcUser.Login -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to login")
 	}
 	return c.JSON(http.StatusOK, echo.Map{
@@ -287,6 +322,10 @@ func (handl *EntityHandler) Refresh(c echo.Context) error {
 	tokenPair.RefreshToken = bindInfo.RefreshToken
 	tokenPair, err = handl.srvcUser.Refresh(c.Request().Context(), tokenPair)
 	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"AccessToken":  tokenPair.AccessToken,
+			"RefreshToken": tokenPair.RefreshToken,
+		}).Errorf("EntityHandler -> Refresh -> srvcUser.Refresh -> error: %v", err)
 		logrus.Errorf("EntityHandler -> Refresh -> srvcUser.Refresh -> error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to refresh")
 	}

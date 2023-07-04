@@ -1,1 +1,5 @@
 .vscode/
+docs/
+requests.http
+backup.sql
+

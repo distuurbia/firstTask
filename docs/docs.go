@@ -67,8 +67,8 @@ const docTemplate = `{
                 "summary": "User login",
                 "parameters": [
                     {
-                        "description": "userRequest value (model.PersonRequest)",
-                        "name": "userRequest",
+                        "description": "user value (model.UserRequest)",
+                        "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -92,6 +92,11 @@ const docTemplate = `{
         },
         "/persons": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get all persons",
                 "consumes": [
                     "application/json"
@@ -103,15 +108,6 @@ const docTemplate = `{
                     "Person"
                 ],
                 "summary": "Get all persons",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -129,6 +125,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Creates a new person",
                 "consumes": [
                     "application/json"
@@ -142,19 +143,12 @@ const docTemplate = `{
                 "summary": "Create a new person",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "personRequest value (model.PersonRequest)",
-                        "name": "personRequest",
+                        "description": "person value (model.Person)",
+                        "name": "person",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.PersonRequest"
+                            "$ref": "#/definitions/model.Person"
                         }
                     }
                 ],
@@ -174,6 +168,11 @@ const docTemplate = `{
         },
         "/persons/{id}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get a person by ID",
                 "consumes": [
                     "application/json"
@@ -186,13 +185,6 @@ const docTemplate = `{
                 ],
                 "summary": "Get a person by ID",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Person ID",
@@ -215,6 +207,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Update a person by ID",
                 "consumes": [
                     "application/json"
@@ -229,25 +226,18 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
                         "description": "Person ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "personRequest value (model.PersonRequest)",
-                        "name": "personRequest",
+                        "description": "person value (model.Person)",
+                        "name": "person",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.PersonRequest"
+                            "$ref": "#/definitions/model.Person"
                         }
                     }
                 ],
@@ -265,6 +255,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Delete a person by ID",
                 "consumes": [
                     "application/json"
@@ -277,13 +272,6 @@ const docTemplate = `{
                 ],
                 "summary": "Delete a person by ID",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bearer token for authentication",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Person ID",
@@ -359,8 +347,8 @@ const docTemplate = `{
                 "summary": "Sign up a new user",
                 "parameters": [
                     {
-                        "description": "userRequest value (model.PersonRequest)",
-                        "name": "userRequest",
+                        "description": "user value (model.UserRequest)",
+                        "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -427,31 +415,6 @@ const docTemplate = `{
                 "salary"
             ],
             "properties": {
-                "ID": {
-                    "type": "string"
-                },
-                "married": {
-                    "type": "boolean"
-                },
-                "profession": {
-                    "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
-                },
-                "salary": {
-                    "type": "integer",
-                    "maximum": 100000,
-                    "minimum": 100
-                }
-            }
-        },
-        "model.PersonRequest": {
-            "type": "object",
-            "required": [
-                "profession",
-                "salary"
-            ],
-            "properties": {
                 "married": {
                     "type": "boolean"
                 },
@@ -507,6 +470,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
