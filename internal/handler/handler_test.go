@@ -36,8 +36,7 @@ func TestMain(m *testing.M) {
 func TestCreate(t *testing.T) {
 	srvc.On("Create", mock.Anything, mock.AnythingOfType("*model.Person")).Return(nil).Once()
 
-	handl := service.NewPersonService(srvc, nil)
-	err := handl.Create(context.Background(), &vladimir)
+	err := srvc.Create(context.Background(), &vladimir)
 	assert.NoError(t, err)
 
 	srvc.AssertExpectations(t)
@@ -46,8 +45,7 @@ func TestCreate(t *testing.T) {
 // TestReadRow is a mocktest for ReadRow method of interface Service
 func TestReadRow(t *testing.T) {
 	srvc.On("ReadRow", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(&vladimir, nil)
-	handle := service.NewPersonService(srvc, nil)
-	testVladimir, err := handle.ReadRow(context.Background(), vladimir.ID)
+	testVladimir, err := srvc.ReadRow(context.Background(), vladimir.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, testVladimir.ID, vladimir.ID)
 	assert.Equal(t, testVladimir.Salary, vladimir.Salary)
@@ -70,10 +68,9 @@ func TestUpdate(t *testing.T) {
 	vladimir.Salary = 700
 	vladimir.Married = false
 	vladimir.Profession = "Lawer"
-	handle := service.NewPersonService(srvc, nil)
-	err := handle.Update(context.Background(), &vladimir)
+	err := srvc.Update(context.Background(), &vladimir)
 	assert.NoError(t, err)
-	testVladimir, err := handle.ReadRow(context.Background(), vladimir.ID)
+	testVladimir, err := srvc.ReadRow(context.Background(), vladimir.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, testVladimir.ID, vladimir.ID)
 	assert.Equal(t, testVladimir.Salary, vladimir.Salary)
@@ -86,8 +83,7 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	srvc.On("Delete", mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(nil)
 
-	handle := service.NewPersonService(srvc, nil)
-	err := handle.Delete(context.Background(), vladimir.ID)
+	err := srvc.Delete(context.Background(), vladimir.ID)
 	assert.NoError(t, err)
 
 	srvc.AssertExpectations(t)

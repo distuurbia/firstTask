@@ -24,10 +24,6 @@ type PersonRedisRepository interface {
 	Set(ctx context.Context, user *model.Person) error
 	Get(ctx context.Context, id uuid.UUID) (*model.Person, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	// AddToStream(ctx context.Context, pers *model.Person) error
-	// GetFromStream(ctx context.Context, id uuid.UUID) (*model.Person, error)
-	// DeleteFromStream(ctx context.Context, id uuid.UUID) error
-	// UpdateToStream(ctx context.Context, pers *model.Person) error
 }
 
 // PersonService contains Repository interface
