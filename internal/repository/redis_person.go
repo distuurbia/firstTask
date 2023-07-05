@@ -57,78 +57,73 @@ func (rds *Redis) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// AddToStream adds to person_stream person
-func (rds *Redis) AddToStream(ctx context.Context, pers *model.Person) error {
-	persJSON, err := json.Marshal(pers)
-	if err != nil {
-		return fmt.Errorf("Redis -> AddToStream -> json.Marshal -> error: %w", err)
-	}
-	streamData := redis.XAddArgs{
-		Stream: "person_stream",
-		Values: map[string]interface{}{
-			"data": string(persJSON),
-			"MyID": pers.ID.String(),
-		},
-	}
-	_, err = rds.client.XAdd(ctx, &streamData).Result()
-	if err != nil {
-		return fmt.Errorf("Redis -> AddToStream -> XAdd -> error: %w", err)
-	}
-	return nil
-}
+// // AddToStream adds to person_stream person
+// func (rds *Redis) AddToStream(ctx context.Context, msg string) error {
+// 	streamData := redis.XAddArgs{
+// 		Stream: "person_stream",
+// 		Values: map[string]interface{}{
+// 			"data": msg,
+// 		},
+// 	}
+// 	_, err := rds.client.XAdd(ctx, &streamData).Result()
+// 	if err != nil {
+// 		return fmt.Errorf("Redis -> AddToStream -> XAdd -> error: %w", err)
+// 	}
+// 	return nil
+// }
 
-// GetFromStream gets a person from the Redis Stream by ID
-func (rds *Redis) GetFromStream(ctx context.Context, id uuid.UUID) (*model.Person, error) {
-	streamData := redis.XReadArgs{
-		Streams: []string{"person_stream", "0"},
-		Count:   0,
-		Block:   0,
-	}
-	results, err := rds.client.XRead(ctx, &streamData).Result()
-	if err != nil {
-		return nil, fmt.Errorf("Redis -> GetFromStream -> XRead -> error: %w", err)
-	}
-	if len(results) == 0 || len(results[0].Messages) == 0 {
-		return nil, redis.Nil
-	}
-	var pers model.Person
-	var persJSON string
-	for _, msg := range results[0].Messages {
-		if msg.Values["MyID"] == id.String() {
-			persJSON = msg.Values["data"].(string)
-			err = json.Unmarshal([]byte(persJSON), &pers)
-			if err != nil {
-				return nil, fmt.Errorf("RedisStreamRepository -> GetFromStream -> json.Unmarshal -> error: %w", err)
-			}
-			return &pers, nil
-		}
-	}
-	return nil, redis.Nil
-}
+// // GetFromStream gets a person from the Redis Stream by ID
+// func (rds *Redis) GetFromStream(ctx context.Context, id uuid.UUID) (string, error) {
+// 	streamData := redis.XReadArgs{
+// 		Streams: []string{"person_stream", "0"},
+// 		Count:   1,
+// 		Block:   0,
+// 	}
+// 	results, err := rds.client.XRead(ctx, &streamData).Result()
+// 	if err != nil {
+// 		return "", fmt.Errorf("Redis -> GetFromStream -> XRead -> error: %w", err)
+// 	}
+// 	if len(results) == 0 || len(results[0].Messages) == 0 {
+// 		return "", redis.Nil
+// 	}
+// 	var pers model.Person
+// 	var persJSON string
+// 	for _, msg := range results[0].Messages {
+// 		if msg.Values["MyID"] == id.String() {
+// 			persJSON = msg.Values["data"].(string)
+// 			err = json.Unmarshal([]byte(persJSON), &pers)
+// 			if err != nil {
+// 				return nil, fmt.Errorf("RedisStreamRepository -> GetFromStream -> json.Unmarshal -> error: %w", err)
+// 			}
+// 			return &pers, nil
+// 		}
+// 	}
+// 	return nil, redis.Nil
+// }
 
-// DeleteFromStream deletes a person from the Redis Stream by ID
-func (rds *Redis) DeleteFromStream(ctx context.Context, id uuid.UUID) error {
-	streamData := redis.XReadArgs{
-		Streams: []string{"person_stream", "0"},
-		Count:   0,
-		Block:   0,
-	}
-	results, err := rds.client.XRead(ctx, &streamData).Result()
-	if err != nil {
-		return fmt.Errorf("Redis -> GetFromStream -> XRead -> error: %w", err)
-	}
-	if len(results) == 0 || len(results[0].Messages) == 0 {
-		return redis.Nil
-	}
-	var msgID string
-	for _, msg := range results[0].Messages {
-		if msg.Values["MyID"] == id.String() {
-			msgID = msg.ID
-		}
-	}
-	_, err = rds.client.XDel(ctx, "person_stream", msgID).Result()
-	if err != nil {
-		return fmt.Errorf("Redis -> DeleteFromStream -> XDel -> error: %w", err)
-	}
-	return nil
-}
+// // DeleteFromStream deletes a person from the Redis Stream by ID
+// func (rds *Redis) DeleteFromStream(ctx context.Context, id uuid.UUID) error {
+// 	streamData := redis.XReadArgs{
+// 		Streams: []string{"person_stream", "0"},
+// 		Count:   0,
+// 		Block:   0,
+// 	}
+// 	results, err := rds.client.XRead(ctx, &streamData).Result()
+// 	if err != nil {
+// 		return fmt.Errorf("Redis -> GetFromStream -> XRead -> error: %w", err)
+// 	}
+// 	if len(results) == 0 || len(results[0].Messages) == 0 {
+// 		return redis.Nil
+// 	}
+// 	var msgID string
+// 	for _, msg := range results[0].Messages {
+// 		if msg.Values["MyID"] == id.String() {
+// 			msgID = msg.ID
+// 		}
+// 	}
+// 	_, err = rds.client.XDel(ctx, "person_stream", msgID).Result()
+// 	if err != nil {
+// 		return fmt.Errorf("Redis -> DeleteFromStream -> XDel -> error: %w", err)
+// 	}
+// 	return nil
+// }

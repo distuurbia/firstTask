@@ -60,6 +60,45 @@ func ConnectRedis(cfg *config.Config) *redis.Client {
 	return client
 }
 
+// producer writes some message to redis stream
+func producer(rdsClient *redis.Client) {
+	const delay = 5
+	streamData := redis.XAddArgs{
+		Stream: "person_stream",
+		Values: map[string]interface{}{
+			"data": "wassab body",
+		},
+	}
+	for {
+		_, err := rdsClient.XAdd(context.Background(), &streamData).Result()
+		if err != nil {
+			log.Fatal("producer -> XAdd -> error: ", err)
+		}
+		time.Sleep(time.Second * delay)
+	}
+}
+
+// consumer reads some message from redis stream and deletes it
+func consumer(rdsClient *redis.Client) {
+	const delay = 5
+	streamData := redis.XReadArgs{
+		Streams: []string{"person_stream", "0"},
+		Count:   1,
+		Block:   0,
+	}
+	for {
+		results, err := rdsClient.XRead(context.Background(), &streamData).Result()
+		if err != nil {
+			log.Fatal("consumer -> XRead -> error: ", err)
+		}
+		for _, msg := range results[0].Messages {
+			fmt.Println("Message received: ", msg.Values["data"])
+			rdsClient.XDel(context.Background(), "person_stream", msg.ID)
+		}
+		time.Sleep(time.Second * delay)
+	}
+}
+
 // @title FirstTask API
 // @description API for managing persons and users
 // @version 1.0
@@ -68,22 +107,25 @@ func ConnectRedis(cfg *config.Config) *redis.Client {
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
+// nolint:funlen //because there is too many routes
 func main() {
 	var cfg config.Config
 	if err := env.Parse(&cfg); err != nil {
 		//nolint:gocritic
 		log.Fatal("could not parse config: ", err)
 	}
-	var handl *handler.EntityHandler
 	validate := validator.New()
+	var handl *handler.EntityHandler
 	rdsClient := ConnectRedis(&cfg)
 	rds := repository.NewRepositoryRedis(rdsClient)
+	go producer(rdsClient)
+	go consumer(rdsClient)
 	fmt.Println("What db do u wanna use?\n 1.PostgreSQL\n 2.MongoDB")
 	var dbChoose int
-	// _, err := fmt.Scan(&dbChoose)
-	// if err != nil {
-	// 	fmt.Println("failed to scan")
-	// }
+	_, err := fmt.Scan(&dbChoose)
+	if err != nil {
+		fmt.Println("failed to scan")
+	}
 	dbChoose = 1
 	const PostgreSQL = 1
 	const MongoDB = 2
