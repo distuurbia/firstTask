@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -19,7 +18,7 @@ import (
 
 const(
 	pgUsername = "personuser"
-	pgPassword = "123"
+	pgPassword = "minovich12"
 	pgDB = "persondb"
 )
 
@@ -49,19 +48,13 @@ func SetupTestPgx() (*pgxpool.Pool, func(), error) {
 		fmt.Sprintf("-user=%s", pgUsername),
 		fmt.Sprintf("-password=%s", pgPassword),
 		"-locations=filesystem:../../migrations",
-		fmt.Sprintf("-url=jdbc:postgresql://%s:%s/persondb", "localhost", resource.GetPort("5432/tcp")),
+		fmt.Sprintf("-url=jdbc:postgresql://%s:%s/persondb", "localhost", resource.GetPort("5432/tcp")), "-connectRetries=10",
 		"migrate",
 	)
-
-	var outb, errb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
 	err = cmd.Run()
 	if err != nil {
 		logrus.Fatalf("can't run migration: %s", err)
 	}
-	fmt.Println(string(outb.Bytes()))
-	fmt.Println(string(errb.Bytes()))
 	port := resource.GetPort("5432/tcp")
 	dbURL := fmt.Sprintf("postgresql://personuser:minovich12@localhost:%s/persondb", port)
 	cfg, err := pgxpool.ParseConfig(dbURL)
@@ -112,15 +105,15 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	rps = NewRepositoryPgx(dbpool)
-	// client, cleanupMongo, err := SetupTestMongoDB()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	cleanupMongo()
-	// 	os.Exit(1)
-	// }
-	// rpsMongo = NewRepositoryMongo(client)
+	client, cleanupMongo, err := SetupTestMongoDB()
+	if err != nil {
+		fmt.Println(err)
+		cleanupMongo()
+		os.Exit(1)
+	}
+	rpsMongo = NewRepositoryMongo(client)
 	exitVal := m.Run()
 	cleanupPgx()
-	// cleanupMongo()
+	cleanupMongo()
 	os.Exit(exitVal)
 }
